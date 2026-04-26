@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -21,7 +20,6 @@ import java.util.Map;
  * Enumeration of standard HTTP status codes with their reason phrases.
  */
 @RequiredArgsConstructor
-@ToString
 @JsonSerialize(using = HttpStatus.Serializer.class)
 @JsonDeserialize(using = HttpStatus.Deserializer.class)
 public enum HttpStatus {
@@ -168,6 +166,11 @@ public enum HttpStatus {
             throw new IllegalArgumentException("No matching HttpStatus for status code: " + value);
         }
         return status;
+    }
+
+    @Override
+    public String toString() {
+        return value + " " + reason;
     }
 
     // -------------------------------------------------------------------------

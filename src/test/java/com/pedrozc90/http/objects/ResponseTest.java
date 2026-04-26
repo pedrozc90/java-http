@@ -15,8 +15,8 @@ class ResponseTest {
             HttpStatus.OK,
             Collections.singletonMap("Content-Type", "application/json"),
             "{\"message\":\"hello\"}",
-            0,
-            String.class
+            String.class,
+            0
         );
 
         assertEquals(HttpStatus.OK, response.getStatus());
@@ -63,15 +63,15 @@ class ResponseTest {
 
     @Test
     void testGetStatusCode() {
-        assertEquals(200, buildResponse(HttpStatus.OK).getStatus());
-        assertEquals(404, buildResponse(HttpStatus.NOT_FOUND).getStatus());
-        assertEquals(500, buildResponse(HttpStatus.INTERNAL_SERVER_ERROR).getStatus());
+        assertEquals(200, buildResponse(HttpStatus.OK).getStatus().value());
+        assertEquals(404, buildResponse(HttpStatus.NOT_FOUND).getStatus().value());
+        assertEquals(500, buildResponse(HttpStatus.INTERNAL_SERVER_ERROR).getStatus().value());
     }
 
     @Test
     void testGetStatusCodeWithNullStatus() {
-        final Response<Void> response = new Response<>(null, null, null, 0, Void.class);
-        assertEquals(-1, response.getStatus());
+        final Response<Void> response = new Response<>(null, null, null, Void.class, 0);
+        assertNull(response.getStatus());
         assertFalse(response.isSuccessful());
         assertFalse(response.isClientError());
         assertFalse(response.isServerError());
@@ -80,8 +80,8 @@ class ResponseTest {
 
     @Test
     void testEquality() {
-        final Response<String> r1 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", 0, String.class);
-        final Response<String> r2 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", 0, String.class);
+        final Response<String> r1 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", String.class, 0);
+        final Response<String> r2 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", String.class, 0);
 
         assertEquals(r1, r2);
         assertEquals(r1.hashCode(), r2.hashCode());
@@ -96,6 +96,6 @@ class ResponseTest {
 
     /* --- Helpers --- */
     private static Response<Void> buildResponse(final HttpStatus status) {
-        return new Response<>(status, Collections.emptyMap(), null, 0, Void.class);
+        return new Response<>(status, Collections.emptyMap(), null, Void.class, 0);
     }
 }

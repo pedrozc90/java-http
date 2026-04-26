@@ -125,7 +125,7 @@ public class Request<T> {
         @Override
         public QueryStep<T> url(final String url) {
             this.url = url;
-            return null;
+            return this;
         }
 
         /* --- QUERY --- */
@@ -206,7 +206,7 @@ public class Request<T> {
 
             if (method == null) throw new IllegalStateException("HTTP method must be defined");
 
-            return new Request<>(url, method, headers, body, bodyType, timeout);
+            return new Request<>(url, method, headers, body, timeout, (Class<T>) bodyType);
         }
 
     }

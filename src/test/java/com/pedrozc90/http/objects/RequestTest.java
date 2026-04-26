@@ -32,7 +32,7 @@ class RequestTest {
     void testConstructorWithBody() {
         final Dto dto = new Dto("Pedro");
 
-        final Request<Dto> request = Request.builder()
+        final Request<Dto> request = Request.<Dto>builder()
             .url("https://example.com/api/resource")
             .header("Content-Type", "application/json")
             .post()

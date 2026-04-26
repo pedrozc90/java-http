@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,7 +41,7 @@ public class JsonUtilsTest {
         final JsonNode value = (JsonNode) obj;
         final String result = JsonUtils.toString(value);
         assertNotNull(result);
-        assertTrue(result.contains("\"name\":\"Pedro\""));
+        assertTrue(result.contains("\"name\" : \"Pedro\""));
     }
 
     @Test
@@ -47,14 +49,16 @@ public class JsonUtilsTest {
         final Dto value = new Dto("Pedro");
         final String result = JsonUtils.toString(value);
         assertNotNull(result);
-        assertTrue(result.contains("\"name\":\"Pedro\""));
+        assertTrue(result.contains("\"name\" : \"Pedro\""));
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     private static class Dto {
 
         @JsonProperty(value = "name")
-        private final String name;
+        private String name;
 
     }
 
