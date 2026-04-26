@@ -123,7 +123,7 @@ public class NativeHttpClientTest {
 
         final File result = response.asFile();
         assertNotNull(result);
-        assertNotNull(result.exists());
+        assertTrue(result.exists());
 
         result.delete();
     }

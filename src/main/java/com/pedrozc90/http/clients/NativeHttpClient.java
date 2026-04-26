@@ -53,8 +53,7 @@ public class NativeHttpClient implements HttpClient {
                 String str = null;
                 if (body instanceof String) {
                     str = (String) body;
-                }
-                if (str instanceof Object) {
+                } else {
                     str = JsonUtils.toString(body);
                 }
 

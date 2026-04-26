@@ -190,7 +190,7 @@ public class Request<T> {
 
         @Override
         public BodyStep<T> put() {
-            return method(HttpMethod.POST);
+            return method(HttpMethod.PUT);
         }
 
         @Override
