@@ -20,9 +20,9 @@ class HttpStatusTest {
 
     @Test
     void testReasonPhrase() {
-        assertEquals("OK", HttpStatus.OK.getReasonPhrase());
-        assertEquals("Not Found", HttpStatus.NOT_FOUND.getReasonPhrase());
-        assertEquals("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        assertEquals("OK", HttpStatus.OK.reason());
+        assertEquals("Not Found", HttpStatus.NOT_FOUND.reason());
+        assertEquals("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.reason());
     }
 
     @Test
@@ -32,42 +32,42 @@ class HttpStatusTest {
     }
 
     @Test
-    void testIs1xxInformational() {
-        assertTrue(HttpStatus.CONTINUE.is1xxInformational());
-        assertFalse(HttpStatus.OK.is1xxInformational());
+    void testIsInformational() {
+        assertTrue(HttpStatus.CONTINUE.isInformational());
+        assertFalse(HttpStatus.OK.isInformational());
     }
 
     @Test
-    void testIs2xxSuccessful() {
-        assertTrue(HttpStatus.OK.is2xxSuccessful());
-        assertTrue(HttpStatus.CREATED.is2xxSuccessful());
-        assertTrue(HttpStatus.NO_CONTENT.is2xxSuccessful());
-        assertFalse(HttpStatus.BAD_REQUEST.is2xxSuccessful());
-        assertFalse(HttpStatus.INTERNAL_SERVER_ERROR.is2xxSuccessful());
+    void testIsSuccessful() {
+        assertTrue(HttpStatus.OK.isSuccessful());
+        assertTrue(HttpStatus.CREATED.isSuccessful());
+        assertTrue(HttpStatus.NO_CONTENT.isSuccessful());
+        assertFalse(HttpStatus.BAD_REQUEST.isSuccessful());
+        assertFalse(HttpStatus.INTERNAL_SERVER_ERROR.isSuccessful());
     }
 
     @Test
     void testIs3xxRedirection() {
-        assertTrue(HttpStatus.MOVED_PERMANENTLY.is3xxRedirection());
-        assertTrue(HttpStatus.NOT_MODIFIED.is3xxRedirection());
-        assertFalse(HttpStatus.OK.is3xxRedirection());
+        assertTrue(HttpStatus.MOVED_PERMANENTLY.isRedirection());
+        assertTrue(HttpStatus.NOT_MODIFIED.isRedirection());
+        assertFalse(HttpStatus.OK.isRedirection());
     }
 
     @Test
-    void testIs4xxClientError() {
-        assertTrue(HttpStatus.BAD_REQUEST.is4xxClientError());
-        assertTrue(HttpStatus.NOT_FOUND.is4xxClientError());
-        assertTrue(HttpStatus.UNAUTHORIZED.is4xxClientError());
-        assertFalse(HttpStatus.OK.is4xxClientError());
-        assertFalse(HttpStatus.INTERNAL_SERVER_ERROR.is4xxClientError());
+    void testIsClientError() {
+        assertTrue(HttpStatus.BAD_REQUEST.isClientError());
+        assertTrue(HttpStatus.NOT_FOUND.isClientError());
+        assertTrue(HttpStatus.UNAUTHORIZED.isClientError());
+        assertFalse(HttpStatus.OK.isClientError());
+        assertFalse(HttpStatus.INTERNAL_SERVER_ERROR.isClientError());
     }
 
     @Test
-    void testIs5xxServerError() {
-        assertTrue(HttpStatus.INTERNAL_SERVER_ERROR.is5xxServerError());
-        assertTrue(HttpStatus.BAD_GATEWAY.is5xxServerError());
-        assertFalse(HttpStatus.OK.is5xxServerError());
-        assertFalse(HttpStatus.NOT_FOUND.is5xxServerError());
+    void testIsServerError() {
+        assertTrue(HttpStatus.INTERNAL_SERVER_ERROR.isServerError());
+        assertTrue(HttpStatus.BAD_GATEWAY.isServerError());
+        assertFalse(HttpStatus.OK.isServerError());
+        assertFalse(HttpStatus.NOT_FOUND.isServerError());
     }
 
     @Test

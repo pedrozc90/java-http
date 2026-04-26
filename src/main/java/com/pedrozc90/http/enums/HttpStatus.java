@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -17,6 +20,8 @@ import java.util.Map;
 /**
  * Enumeration of standard HTTP status codes with their reason phrases.
  */
+@RequiredArgsConstructor
+@ToString
 @JsonSerialize(using = HttpStatus.Serializer.class)
 @JsonDeserialize(using = HttpStatus.Deserializer.class)
 public enum HttpStatus {
@@ -88,69 +93,58 @@ public enum HttpStatus {
     NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required");
 
     private final int value;
-    private final String reasonPhrase;
+    private final String reason;
 
-    private static final Map<Integer, HttpStatus> LOOKUP;
+    private static final Map<Integer, HttpStatus> _map;
 
     static {
         final Map<Integer, HttpStatus> map = new HashMap<>();
         for (final HttpStatus status : values()) {
             map.put(status.value, status);
         }
-        LOOKUP = Collections.unmodifiableMap(map);
+        _map = Collections.unmodifiableMap(map);
     }
 
-    HttpStatus(final int value, final String reasonPhrase) {
-        this.value = value;
-        this.reasonPhrase = reasonPhrase;
-    }
-
-    /**
-     * Returns the numeric status code.
-     */
     public int value() {
         return value;
     }
 
-    /**
-     * Returns the human-readable reason phrase.
-     */
-    public String getReasonPhrase() {
-        return reasonPhrase;
+    public String reason() {
+        return reason;
     }
 
     /**
      * Returns {@code true} if this status is in the 1xx Informational range.
      */
-    public boolean is1xxInformational() {
+    public boolean isInformational() {
         return value >= 100 && value < 200;
     }
 
     /**
      * Returns {@code true} if this status is in the 2xx Successful range.
      */
-    public boolean is2xxSuccessful() {
+    public boolean isSuccessful() {
         return value >= 200 && value < 300;
     }
 
     /**
      * Returns {@code true} if this status is in the 3xx Redirection range.
      */
-    public boolean is3xxRedirection() {
+    public boolean isRedirection() {
         return value >= 300 && value < 400;
     }
 
     /**
      * Returns {@code true} if this status is in the 4xx Client Error range.
      */
-    public boolean is4xxClientError() {
+    public boolean isClientError() {
         return value >= 400 && value < 500;
     }
 
     /**
      * Returns {@code true} if this status is in the 5xx Server Error range.
      */
-    public boolean is5xxServerError() {
+    public boolean isServerError() {
         return value >= 500 && value < 600;
     }
 
@@ -158,27 +152,22 @@ public enum HttpStatus {
      * Returns {@code true} if this status is either a client or server error.
      */
     public boolean isError() {
-        return is4xxClientError() || is5xxServerError();
+        return isClientError() || isServerError();
     }
 
     /**
      * Resolves a {@link HttpStatus} for the given numeric status code.
      *
-     * @param statusCode the HTTP status code
+     * @param value the HTTP status code
      * @return the matching {@link HttpStatus}
      * @throws IllegalArgumentException if no matching constant is found
      */
-    public static HttpStatus resolve(final int statusCode) {
-        final HttpStatus status = LOOKUP.get(statusCode);
+    public static HttpStatus resolve(final int value) {
+        final HttpStatus status = _map.get(value);
         if (status == null) {
-            throw new IllegalArgumentException("No matching HttpStatus for status code: " + statusCode);
+            throw new IllegalArgumentException("No matching HttpStatus for status code: " + value);
         }
         return status;
-    }
-
-    @Override
-    public String toString() {
-        return value + " " + reasonPhrase;
     }
 
     // -------------------------------------------------------------------------
@@ -190,9 +179,12 @@ public enum HttpStatus {
      */
     public static class Serializer extends JsonSerializer<HttpStatus> {
         @Override
-        public void serialize(final HttpStatus value, final JsonGenerator gen,
-                final SerializerProvider provider) throws IOException {
-            gen.writeNumber(value.value());
+        public void serialize(final HttpStatus value, final JsonGenerator gen, final SerializerProvider provider) throws IOException {
+            if (value == null) {
+                gen.writeNull();
+            } else {
+                gen.writeNumber(value.value);
+            }
         }
     }
 
@@ -201,9 +193,9 @@ public enum HttpStatus {
      */
     public static class Deserializer extends JsonDeserializer<HttpStatus> {
         @Override
-        public HttpStatus deserialize(final JsonParser p,
-                final DeserializationContext ctxt) throws IOException {
-            return HttpStatus.resolve(p.getIntValue());
+        public HttpStatus deserialize(final JsonParser p, final DeserializationContext cxt) throws IOException {
+            final int value = p.getIntValue();
+            return HttpStatus.resolve(value);
         }
     }
 }

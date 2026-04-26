@@ -1,4 +1,4 @@
-package com.pedrozc90.http.models;
+package com.pedrozc90.http.objects;
 
 import com.pedrozc90.http.enums.HttpStatus;
 import org.junit.jupiter.api.Test;
@@ -12,9 +12,12 @@ class ResponseTest {
     @Test
     void testConstructorCreatesResponse() {
         final Response<String> response = new Response<>(
-                HttpStatus.OK,
-                Collections.singletonMap("Content-Type", "application/json"),
-                "{\"message\":\"hello\"}");
+            HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/json"),
+            "{\"message\":\"hello\"}",
+            0,
+            String.class
+        );
 
         assertEquals(HttpStatus.OK, response.getStatus());
         assertEquals(1, response.getHeaders().size());
@@ -60,15 +63,15 @@ class ResponseTest {
 
     @Test
     void testGetStatusCode() {
-        assertEquals(200, buildResponse(HttpStatus.OK).getStatusCode());
-        assertEquals(404, buildResponse(HttpStatus.NOT_FOUND).getStatusCode());
-        assertEquals(500, buildResponse(HttpStatus.INTERNAL_SERVER_ERROR).getStatusCode());
+        assertEquals(200, buildResponse(HttpStatus.OK).getStatus());
+        assertEquals(404, buildResponse(HttpStatus.NOT_FOUND).getStatus());
+        assertEquals(500, buildResponse(HttpStatus.INTERNAL_SERVER_ERROR).getStatus());
     }
 
     @Test
     void testGetStatusCodeWithNullStatus() {
-        final Response<Void> response = new Response<>(null, null, null);
-        assertEquals(-1, response.getStatusCode());
+        final Response<Void> response = new Response<>(null, null, null, 0, Void.class);
+        assertEquals(-1, response.getStatus());
         assertFalse(response.isSuccessful());
         assertFalse(response.isClientError());
         assertFalse(response.isServerError());
@@ -77,8 +80,8 @@ class ResponseTest {
 
     @Test
     void testEquality() {
-        final Response<String> r1 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body");
-        final Response<String> r2 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body");
+        final Response<String> r1 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", 0, String.class);
+        final Response<String> r2 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", 0, String.class);
 
         assertEquals(r1, r2);
         assertEquals(r1.hashCode(), r2.hashCode());
@@ -91,11 +94,8 @@ class ResponseTest {
         assertTrue(str.contains("OK"));
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
+    /* --- Helpers --- */
     private static Response<Void> buildResponse(final HttpStatus status) {
-        return new Response<>(status, Collections.emptyMap(), null);
+        return new Response<>(status, Collections.emptyMap(), null, 0, Void.class);
     }
 }
