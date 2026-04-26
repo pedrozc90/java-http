@@ -2,21 +2,16 @@ package com.pedrozc90.http.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pedrozc90.http.enums.HttpStatus;
-import lombok.Builder;
 import lombok.Data;
-import lombok.Singular;
 
 import java.util.Map;
 
 /**
  * Immutable representation of an HTTP response.
  *
- * <p>Use the {@link ResponseBuilder} obtained via {@link Response#builder()} to construct instances.
- *
  * @param <T> the type of the response body
  */
 @Data
-@Builder
 public class Response<T> {
 
     /**
@@ -26,16 +21,8 @@ public class Response<T> {
     private final HttpStatus status;
 
     /**
-     * The human-readable reason phrase associated with the status code
-     * (e.g. {@code "OK"}, {@code "Not Found"}).
-     */
-    @JsonProperty("reason")
-    private final String reason;
-
-    /**
      * HTTP headers returned by the server.
      */
-    @Singular("header")
     @JsonProperty("headers")
     private final Map<String, String> headers;
 

@@ -3,21 +3,20 @@ package com.pedrozc90.http.models;
 import com.pedrozc90.http.enums.HttpStatus;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ResponseTest {
 
     @Test
-    void testBuilderCreatesResponse() {
-        final Response<String> response = Response.<String>builder()
-                .status(HttpStatus.OK)
-                .reason(HttpStatus.OK.getReasonPhrase())
-                .header("Content-Type", "application/json")
-                .body("{\"message\":\"hello\"}")
-                .build();
+    void testConstructorCreatesResponse() {
+        final Response<String> response = new Response<>(
+                HttpStatus.OK,
+                Collections.singletonMap("Content-Type", "application/json"),
+                "{\"message\":\"hello\"}");
 
         assertEquals(HttpStatus.OK, response.getStatus());
-        assertEquals("OK", response.getReason());
         assertEquals(1, response.getHeaders().size());
         assertEquals("application/json", response.getHeaders().get("Content-Type"));
         assertEquals("{\"message\":\"hello\"}", response.getBody());
@@ -68,7 +67,7 @@ class ResponseTest {
 
     @Test
     void testGetStatusCodeWithNullStatus() {
-        final Response<Void> response = Response.<Void>builder().build();
+        final Response<Void> response = new Response<>(null, null, null);
         assertEquals(-1, response.getStatusCode());
         assertFalse(response.isSuccessful());
         assertFalse(response.isClientError());
@@ -78,15 +77,8 @@ class ResponseTest {
 
     @Test
     void testEquality() {
-        final Response<String> r1 = Response.<String>builder()
-                .status(HttpStatus.OK)
-                .body("body")
-                .build();
-
-        final Response<String> r2 = Response.<String>builder()
-                .status(HttpStatus.OK)
-                .body("body")
-                .build();
+        final Response<String> r1 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body");
+        final Response<String> r2 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body");
 
         assertEquals(r1, r2);
         assertEquals(r1.hashCode(), r2.hashCode());
@@ -104,9 +96,6 @@ class ResponseTest {
     // -------------------------------------------------------------------------
 
     private static Response<Void> buildResponse(final HttpStatus status) {
-        return Response.<Void>builder()
-                .status(status)
-                .reason(status.getReasonPhrase())
-                .build();
+        return new Response<>(status, Collections.emptyMap(), null);
     }
 }

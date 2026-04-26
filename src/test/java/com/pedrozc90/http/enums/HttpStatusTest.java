@@ -1,10 +1,15 @@
 package com.pedrozc90.http.enums;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpStatusTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void testValue() {
@@ -83,5 +88,26 @@ class HttpStatusTest {
     @Test
     void testResolveUnknownThrows() {
         assertThrows(IllegalArgumentException.class, () -> HttpStatus.resolve(999));
+    }
+
+    @Test
+    void testSerializer() throws IOException {
+        final String json = objectMapper.writeValueAsString(HttpStatus.OK);
+        assertEquals("200", json);
+
+        final String json404 = objectMapper.writeValueAsString(HttpStatus.NOT_FOUND);
+        assertEquals("404", json404);
+    }
+
+    @Test
+    void testDeserializer() throws IOException {
+        assertEquals(HttpStatus.OK, objectMapper.readValue("200", HttpStatus.class));
+        assertEquals(HttpStatus.NOT_FOUND, objectMapper.readValue("404", HttpStatus.class));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, objectMapper.readValue("500", HttpStatus.class));
+    }
+
+    @Test
+    void testDeserializerUnknownThrows() {
+        assertThrows(Exception.class, () -> objectMapper.readValue("999", HttpStatus.class));
     }
 }

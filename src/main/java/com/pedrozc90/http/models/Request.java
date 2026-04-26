@@ -2,21 +2,16 @@ package com.pedrozc90.http.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pedrozc90.http.enums.HttpMethod;
-import lombok.Builder;
 import lombok.Data;
-import lombok.Singular;
 
 import java.util.Map;
 
 /**
  * Immutable representation of an HTTP request.
  *
- * <p>Use the {@link RequestBuilder} obtained via {@link Request#builder()} to construct instances.
- *
  * @param <T> the type of the request body
  */
 @Data
-@Builder
 public class Request<T> {
 
     /**
@@ -34,16 +29,8 @@ public class Request<T> {
     /**
      * HTTP headers to send with the request.
      */
-    @Singular("header")
     @JsonProperty("headers")
     private final Map<String, String> headers;
-
-    /**
-     * Query parameters to append to the URL.
-     */
-    @Singular("queryParam")
-    @JsonProperty("query_params")
-    private final Map<String, String> queryParams;
 
     /**
      * The request body (may be {@code null} for methods without a body, e.g. GET).

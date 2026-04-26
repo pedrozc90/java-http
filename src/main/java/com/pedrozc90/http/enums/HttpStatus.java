@@ -1,11 +1,24 @@
 package com.pedrozc90.http.enums;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Enumeration of standard HTTP status codes with their reason phrases.
  */
+@JsonSerialize(using = HttpStatus.Serializer.class)
+@JsonDeserialize(using = HttpStatus.Deserializer.class)
 public enum HttpStatus {
 
     // 1xx Informational
@@ -77,6 +90,16 @@ public enum HttpStatus {
     private final int value;
     private final String reasonPhrase;
 
+    private static final Map<Integer, HttpStatus> LOOKUP;
+
+    static {
+        final Map<Integer, HttpStatus> map = new HashMap<>();
+        for (final HttpStatus status : values()) {
+            map.put(status.value, status);
+        }
+        LOOKUP = Collections.unmodifiableMap(map);
+    }
+
     HttpStatus(final int value, final String reasonPhrase) {
         this.value = value;
         this.reasonPhrase = reasonPhrase;
@@ -85,7 +108,6 @@ public enum HttpStatus {
     /**
      * Returns the numeric status code.
      */
-    @JsonValue
     public int value() {
         return value;
     }
@@ -146,18 +168,42 @@ public enum HttpStatus {
      * @return the matching {@link HttpStatus}
      * @throws IllegalArgumentException if no matching constant is found
      */
-    @JsonCreator
     public static HttpStatus resolve(final int statusCode) {
-        for (final HttpStatus status : values()) {
-            if (status.value == statusCode) {
-                return status;
-            }
+        final HttpStatus status = LOOKUP.get(statusCode);
+        if (status == null) {
+            throw new IllegalArgumentException("No matching HttpStatus for status code: " + statusCode);
         }
-        throw new IllegalArgumentException("No matching HttpStatus for status code: " + statusCode);
+        return status;
     }
 
     @Override
     public String toString() {
         return value + " " + reasonPhrase;
+    }
+
+    // -------------------------------------------------------------------------
+    // Jackson Serializer / Deserializer
+    // -------------------------------------------------------------------------
+
+    /**
+     * Jackson serializer that writes an {@link HttpStatus} as its numeric status code.
+     */
+    public static class Serializer extends JsonSerializer<HttpStatus> {
+        @Override
+        public void serialize(final HttpStatus value, final JsonGenerator gen,
+                final SerializerProvider provider) throws IOException {
+            gen.writeNumber(value.value());
+        }
+    }
+
+    /**
+     * Jackson deserializer that reads a numeric status code and resolves it to a {@link HttpStatus}.
+     */
+    public static class Deserializer extends JsonDeserializer<HttpStatus> {
+        @Override
+        public HttpStatus deserialize(final JsonParser p,
+                final DeserializationContext ctxt) throws IOException {
+            return HttpStatus.resolve(p.getIntValue());
+        }
     }
 }
