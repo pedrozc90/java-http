@@ -104,6 +104,7 @@ public class NativeHttpClientTest {
                 .willReturn(
                     ok()
                         .withHeader("Content-Type", "text/plain")
+                        .withHeader("Content-Disposition", "attachment; filename=\"sanity-check.txt\"")
                         .withBodyFile("sanity-check.txt")
                 )
         );
@@ -124,6 +125,8 @@ public class NativeHttpClientTest {
         final File result = response.asFile();
         assertNotNull(result);
         assertTrue(result.exists());
+        assertTrue(result.getName().startsWith("sanity-check"));
+        assertTrue(result.getName().endsWith(".txt"));
 
         result.delete();
     }

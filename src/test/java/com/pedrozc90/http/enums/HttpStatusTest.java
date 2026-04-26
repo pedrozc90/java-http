@@ -83,11 +83,21 @@ class HttpStatusTest {
         assertEquals(HttpStatus.OK, HttpStatus.resolve(200));
         assertEquals(HttpStatus.NOT_FOUND, HttpStatus.resolve(404));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.resolve(500));
+        assertEquals(HttpStatus.NONE, HttpStatus.resolve(-1));
     }
 
     @Test
-    void testResolveUnknownThrows() {
-        assertThrows(IllegalArgumentException.class, () -> HttpStatus.resolve(999));
+    void testResolveUnknownReturnsNone() {
+        assertEquals(HttpStatus.NONE, HttpStatus.resolve(999));
+    }
+
+    @Test
+    void testNoneIsNotAnyErrorOrSuccess() {
+        assertFalse(HttpStatus.NONE.isSuccessful());
+        assertFalse(HttpStatus.NONE.isClientError());
+        assertFalse(HttpStatus.NONE.isServerError());
+        assertFalse(HttpStatus.NONE.isError());
+        assertTrue(HttpStatus.NONE.isNone());
     }
 
     @Test
@@ -107,7 +117,7 @@ class HttpStatusTest {
     }
 
     @Test
-    void testDeserializerUnknownThrows() {
-        assertThrows(Exception.class, () -> objectMapper.readValue("999", HttpStatus.class));
+    void testDeserializerUnknownReturnsNone() throws IOException {
+        assertEquals(HttpStatus.NONE, objectMapper.readValue("999", HttpStatus.class));
     }
 }

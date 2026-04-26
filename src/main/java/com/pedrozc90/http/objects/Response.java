@@ -1,6 +1,13 @@
 package com.pedrozc90.http.objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.pedrozc90.http.enums.HttpHeader;
 import com.pedrozc90.http.enums.HttpStatus;
 import com.pedrozc90.http.utils.JsonUtils;
 import lombok.Data;
@@ -17,6 +24,7 @@ import java.util.Map;
  * Immutable representation of an HTTP response.
  */
 @Data
+@JsonSerialize(using = Response.Serializer.class)
 public class Response {
 
     /**
@@ -87,10 +95,36 @@ public class Response {
     }
 
     public File asFile() throws IOException {
-        final String contentDisposition = headers.get("Content-Disposition");
-        final Path tmp = Files.createTempFile("res", "");
+        String prefix = "res";
+        String suffix = "";
+
+        final String contentDisposition = headers != null ? headers.get(HttpHeader.CONTENT_DISPOSITION) : null;
+        if (contentDisposition != null && !contentDisposition.isBlank()) {
+            final String filename = parseFilename(contentDisposition);
+            if (filename != null) {
+                final int dot = filename.lastIndexOf('.');
+                prefix = dot > 0 ? filename.substring(0, dot) : filename;
+                suffix = dot > 0 ? filename.substring(dot) : "";
+            }
+        }
+
+        final Path tmp = Files.createTempFile(prefix, suffix);
         Files.write(tmp, payload);
         return tmp.toFile();
+    }
+
+    private static String parseFilename(final String contentDisposition) {
+        for (final String part : contentDisposition.split(";")) {
+            final String trimmed = part.trim();
+            if (trimmed.startsWith("filename=")) {
+                String name = trimmed.substring("filename=".length()).trim();
+                if (name.startsWith("\"") && name.endsWith("\"")) {
+                    name = name.substring(1, name.length() - 1);
+                }
+                return name;
+            }
+        }
+        return null;
     }
 
     public static Response of(final HttpStatus status, final Map<String, String> headers, final byte[] body, final long start) {
@@ -100,6 +134,71 @@ public class Response {
 
     public static Response of(final int status, final Map<String, String> headers, final byte[] body, final long start) {
         return of(HttpStatus.resolve(status), headers, body, start);
+    }
+
+    // -------------------------------------------------------------------------
+    // Jackson Serializer — smart payload rendering
+    // -------------------------------------------------------------------------
+
+    /**
+     * Custom Jackson serializer for {@link Response}.
+     * <p>
+     * The {@code payload} field is rendered based on the response {@code Content-Type}:
+     * <ul>
+     *   <li>{@code application/json} — payload is pretty-printed as a JSON tree</li>
+     *   <li>{@code text/*} — payload is rendered as a UTF-8 string</li>
+     *   <li>anything else — a placeholder {@code <binary data, N bytes>} is emitted</li>
+     * </ul>
+     */
+    public static class Serializer extends StdSerializer<Response> {
+
+        public Serializer() {
+            super(Response.class);
+        }
+
+        @Override
+        public void serialize(final Response response, final JsonGenerator gen, final SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            provider.defaultSerializeField("status", response.getStatus(), gen);
+            provider.defaultSerializeField("headers", response.getHeaders(), gen);
+            gen.writeNumberField("elapsed", response.getElapsed());
+            serializePayload(response, gen);
+            gen.writeEndObject();
+        }
+
+        private static void serializePayload(final Response response, final JsonGenerator gen) throws IOException {
+            gen.writeFieldName("payload");
+
+            final byte[] payload = response.getPayload();
+            if (payload == null || payload.length == 0) {
+                gen.writeNull();
+                return;
+            }
+
+            final String contentType = findHeader(response.getHeaders(), HttpHeader.CONTENT_TYPE);
+
+            if (contentType != null && contentType.contains("application/json")) {
+                try {
+                    final JsonNode node = JsonUtils.getMapper().readTree(payload);
+                    gen.writeTree(node);
+                } catch (JsonProcessingException e) {
+                    gen.writeString(new String(payload, StandardCharsets.UTF_8));
+                }
+            } else if (contentType != null && contentType.startsWith("text/")) {
+                gen.writeString(new String(payload, StandardCharsets.UTF_8));
+            } else {
+                gen.writeString("<binary data, " + payload.length + " bytes>");
+            }
+        }
+
+        private static String findHeader(final Map<String, String> headers, final String name) {
+            if (headers == null) return null;
+            return headers.entrySet().stream()
+                .filter(e -> name.equalsIgnoreCase(e.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+        }
     }
 
 }

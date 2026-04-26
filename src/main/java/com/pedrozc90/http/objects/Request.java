@@ -97,11 +97,19 @@ public class Request<T> {
     public interface MethodStep<T> {
         BodyStep<T> get();
 
+        BodyStep<T> head();
+
         BodyStep<T> post();
 
         BodyStep<T> put();
 
+        BodyStep<T> patch();
+
         BodyStep<T> delete();
+
+        BodyStep<T> options();
+
+        BodyStep<T> trace();
     }
 
     public interface BodyStep<T> extends BuildStep<T> {
@@ -184,6 +192,11 @@ public class Request<T> {
         }
 
         @Override
+        public BodyStep<T> head() {
+            return method(HttpMethod.HEAD);
+        }
+
+        @Override
         public BodyStep<T> post() {
             return method(HttpMethod.POST);
         }
@@ -194,8 +207,23 @@ public class Request<T> {
         }
 
         @Override
+        public BodyStep<T> patch() {
+            return method(HttpMethod.PATCH);
+        }
+
+        @Override
         public BodyStep<T> delete() {
             return method(HttpMethod.DELETE);
+        }
+
+        @Override
+        public BodyStep<T> options() {
+            return method(HttpMethod.OPTIONS);
+        }
+
+        @Override
+        public BodyStep<T> trace() {
+            return method(HttpMethod.TRACE);
         }
 
         /* --- BODY --- */

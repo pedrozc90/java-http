@@ -56,6 +56,36 @@ class RequestTest {
     }
 
     @Test
+    void testPutMethod() {
+        final Request<?> request = Request.builder().url("https://example.com").put().build();
+        assertEquals(HttpMethod.PUT, request.getMethod());
+    }
+
+    @Test
+    void testPatchMethod() {
+        final Request<?> request = Request.builder().url("https://example.com").patch().build();
+        assertEquals(HttpMethod.PATCH, request.getMethod());
+    }
+
+    @Test
+    void testHeadMethod() {
+        final Request<?> request = Request.builder().url("https://example.com").head().build();
+        assertEquals(HttpMethod.HEAD, request.getMethod());
+    }
+
+    @Test
+    void testOptionsMethod() {
+        final Request<?> request = Request.builder().url("https://example.com").options().build();
+        assertEquals(HttpMethod.OPTIONS, request.getMethod());
+    }
+
+    @Test
+    void testTraceMethod() {
+        final Request<?> request = Request.builder().url("https://example.com").trace().build();
+        assertEquals(HttpMethod.TRACE, request.getMethod());
+    }
+
+    @Test
     void testEquality() {
         final Request<?> r1 = Request.builder().url("https://example.com").get().build();
         final Request<?> r2 = Request.builder().url("https://example.com").get().build();

@@ -23,6 +23,9 @@ import java.util.Map;
 @JsonDeserialize(using = HttpStatus.Deserializer.class)
 public enum HttpStatus {
 
+    // Sentinel for unknown / pre-response state
+    NONE(-1, "None"),
+
     // 1xx Informational
     CONTINUE(100, "Continue"),
     SWITCHING_PROTOCOLS(101, "Switching Protocols"),
@@ -111,6 +114,13 @@ public enum HttpStatus {
     }
 
     /**
+     * Returns {@code true} if this status represents no real HTTP response (pre-connection or unknown code).
+     */
+    public boolean isNone() {
+        return this == NONE;
+    }
+
+    /**
      * Returns {@code true} if this status is in the 1xx Informational range.
      */
     public boolean isInformational() {
@@ -154,17 +164,13 @@ public enum HttpStatus {
 
     /**
      * Resolves a {@link HttpStatus} for the given numeric status code.
+     * Returns {@link #NONE} if no matching constant is found.
      *
      * @param value the HTTP status code
-     * @return the matching {@link HttpStatus}
-     * @throws IllegalArgumentException if no matching constant is found
+     * @return the matching {@link HttpStatus}, or {@link #NONE} for unrecognised codes
      */
     public static HttpStatus resolve(final int value) {
-        final HttpStatus status = _map.get(value);
-        if (status == null) {
-            throw new IllegalArgumentException("No matching HttpStatus for status code: " + value);
-        }
-        return status;
+        return _map.getOrDefault(value, NONE);
     }
 
     @Override

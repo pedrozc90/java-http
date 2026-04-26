@@ -22,7 +22,7 @@ public class NativeHttpClient implements HttpClient {
     public Response execute(final Request<?> request) throws HttpResponseException {
         final long start = System.currentTimeMillis();
 
-        int status = 500;
+        int status = -1;
         String message = null;
         byte[] content = null;
         Map<String, String> headers = null;
@@ -50,19 +50,26 @@ public class NativeHttpClient implements HttpClient {
             final Object body = request.getBody();
 
             if (body != null) {
-                String str = null;
-                if (body instanceof String) {
-                    str = (String) body;
-                } else {
-                    str = JsonUtils.toString(body);
-                }
-
-
-                if (str != null && !str.isBlank()) {
+                if (body instanceof byte[]) {
+                    final byte[] bytes = (byte[]) body;
                     connection.setDoOutput(true);
                     try (OutputStream os = connection.getOutputStream()) {
-                        byte[] bytes = str.getBytes(request.getCharset());
                         os.write(bytes, 0, bytes.length);
+                    }
+                } else {
+                    String str = null;
+                    if (body instanceof String) {
+                        str = (String) body;
+                    } else {
+                        str = JsonUtils.toString(body);
+                    }
+
+                    if (str != null && !str.isBlank()) {
+                        connection.setDoOutput(true);
+                        try (OutputStream os = connection.getOutputStream()) {
+                            byte[] bytes = str.getBytes(request.getCharset());
+                            os.write(bytes, 0, bytes.length);
+                        }
                     }
                 }
             }
@@ -84,9 +91,7 @@ public class NativeHttpClient implements HttpClient {
                 connection.disconnect();
             }
 
-            final long elapsed = System.currentTimeMillis() - start;
-
-            final Response response = Response.of(status, headers, content, elapsed);
+            final Response response = Response.of(status, headers, content, start);
 
             if (!resolved.isSuccessful()) {
                 throw new HttpResponseException(message, request, response);
