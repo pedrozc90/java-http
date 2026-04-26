@@ -63,23 +63,25 @@ public class Request<T> {
     /* --- Builder --- */
     public interface UrlStep<T> {
         QueryStep<T> url(final String url);
+
+        QueryStep<T> url(final String fmt, final Object... args);
     }
 
-    public interface QueryStep<T> {
+    public interface QueryStep<T> extends HeaderStep<T> {
         QueryStep<T> query(final String key, final String value);
 
         HeaderStep<T> header(final String key, final String value);
 
-        BodyStep<T> get();
-
-        BodyStep<T> post();
-
-        BodyStep<T> put();
-
-        BodyStep<T> delete();
+//        BodyStep<T> get();
+//
+//        BodyStep<T> post();
+//
+//        BodyStep<T> put();
+//
+//        BodyStep<T> delete();
     }
 
-    public interface HeaderStep<T> {
+    public interface HeaderStep<T> extends MethodStep<T> {
         HeaderStep<T> header(final String key, final String value);
 
         HeaderStep<T> authorization(final String value);
@@ -90,6 +92,9 @@ public class Request<T> {
 
         HeaderStep<T> contentType(final ContentType value);
 
+    }
+
+    public interface MethodStep<T> {
         BodyStep<T> get();
 
         BodyStep<T> post();
@@ -126,6 +131,12 @@ public class Request<T> {
         public QueryStep<T> url(final String url) {
             this.url = url;
             return this;
+        }
+
+        @Override
+        public QueryStep<T> url(final String fmt, final Object... args) {
+            final String url = String.format(fmt, args);
+            return url(url);
         }
 
         /* --- QUERY --- */

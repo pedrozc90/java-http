@@ -13,19 +13,19 @@ import java.util.concurrent.CompletionException;
 public class HttpResponseException extends Exception {
 
     private final Request<?> request;
-    private final Response<?> response;
+    private final Response response;
 
-    public HttpResponseException(final Throwable cause, final String message, final Request<?> request, final Response<?> response) {
+    public HttpResponseException(final Throwable cause, final String message, final Request<?> request, final Response response) {
         super(message, cause);
         this.request = request;
         this.response = response;
     }
 
-    public HttpResponseException(final Throwable cause, final Request<?> request, final Response<?> response) {
+    public HttpResponseException(final Throwable cause, final Request<?> request, final Response response) {
         this(cause, null, request, response);
     }
 
-    public HttpResponseException(final String message, final Request<?> request, final Response<?> response) {
+    public HttpResponseException(final String message, final Request<?> request, final Response response) {
         this(null, message, request, response);
     }
 

@@ -1,5 +1,6 @@
 package com.pedrozc90.http.clients;
 
+import com.pedrozc90.http.enums.HttpStatus;
 import com.pedrozc90.http.exceptions.HttpResponseException;
 import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
@@ -13,19 +14,18 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
 public class NativeHttpClient implements HttpClient {
 
     @Override
-    public <T> Response<T> execute(final Request<?> request, final Class<T> responseType) throws HttpResponseException {
+    public Response execute(final Request<?> request) throws HttpResponseException {
         final long start = System.currentTimeMillis();
 
-        int status = -1;
+        int status = 500;
         String message = null;
-        String content = null;
-        Map<String, String> responseHeaders = null;
+        byte[] content = null;
+        Map<String, String> headers = null;
 
         try {
             // Create a Url object from the url.
@@ -36,8 +36,11 @@ public class NativeHttpClient implements HttpClient {
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("Connection", "keep-alive");
             connection.setRequestMethod(request.getMethod().name());
-            if (request.getType() != null) {
-                connection.setConnectTimeout(request.getTimeout());
+
+            final Integer timeout = request.getTimeout();
+            if (timeout != null) {
+                connection.setConnectTimeout(timeout);
+                connection.setReadTimeout(timeout);
             }
 
             // Set the request headers.
@@ -47,14 +50,19 @@ public class NativeHttpClient implements HttpClient {
             final Object body = request.getBody();
 
             if (body != null) {
-                final String bodyStr = (body instanceof String)
-                    ? (String) body
-                    : JsonUtils.toString(body);
+                String str = null;
+                if (body instanceof String) {
+                    str = (String) body;
+                }
+                if (str instanceof Object) {
+                    str = JsonUtils.toString(body);
+                }
 
-                if (bodyStr != null && !bodyStr.isBlank()) {
+
+                if (str != null && !str.isBlank()) {
                     connection.setDoOutput(true);
                     try (OutputStream os = connection.getOutputStream()) {
-                        byte[] bytes = bodyStr.getBytes(request.getCharset());
+                        byte[] bytes = str.getBytes(request.getCharset());
                         os.write(bytes, 0, bytes.length);
                     }
                 }
@@ -62,20 +70,16 @@ public class NativeHttpClient implements HttpClient {
 
             status = connection.getResponseCode();
             message = connection.getResponseMessage();
+            headers = getResponseHeaders(connection);
 
-            responseHeaders = getResponseHeaders(connection);
+            final HttpStatus resolved = HttpStatus.resolve(status);
 
-            final InputStream is = (status >= 200 && status < 300)
-                ? connection.getInputStream()
-                : connection.getErrorStream();
+            final InputStream is = resolved.isError() ? connection.getErrorStream() : connection.getInputStream();
 
             try {
                 if (is != null) {
-                    try (Scanner scanner = new Scanner(is, request.getCharset())) {
-                        if (scanner.hasNext()) {
-                            content = scanner.useDelimiter("\\A").next();
-                        }
-                    }
+                    // TODO: improve and handle not text content
+                    content = is.readAllBytes();
                 }
             } finally {
                 connection.disconnect();
@@ -83,31 +87,24 @@ public class NativeHttpClient implements HttpClient {
 
             final long elapsed = System.currentTimeMillis() - start;
 
-            final T object = JsonUtils.toObject(content, responseType);
+            final Response response = Response.of(status, headers, content, elapsed);
 
-            final Response<T> response = Response.of(status, responseHeaders, object, responseType, elapsed);
-
-            if (status < 200 || status >= 300) {
+            if (!resolved.isSuccessful()) {
                 throw new HttpResponseException(message, request, response);
             }
 
             return response;
         } catch (IOException e) {
-            final Response<String> response = Response.of(status, responseHeaders, content, String.class, start);
+            final Response response = Response.of(status, headers, content, start);
             throw new HttpResponseException(e, request, response);
         }
     }
 
     @Override
-    public Response<String> execute(final Request<?> request) throws HttpResponseException {
-        return execute(request, String.class);
-    }
-
-    @Override
-    public <T> CompletableFuture<Response<T>> async(final Request<T> request, final Class<T> responseType) {
+    public CompletableFuture<Response> async(final Request<?> request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return execute(request, responseType);
+                return execute(request);
             } catch (HttpResponseException e) {
                 // TODO: how do we properly handle this?
                 throw e.toCompletionException();

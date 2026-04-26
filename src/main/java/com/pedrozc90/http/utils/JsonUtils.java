@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 public class JsonUtils {
@@ -36,6 +37,11 @@ public class JsonUtils {
     }
 
     public static <T> T toObject(final String value, final Class<T> type) throws JsonProcessingException {
+        if (value == null) return null;
+        return _mapper.readValue(value, type);
+    }
+
+    public static <T> T toObject(final byte[] value, final Class<T> type) throws JsonProcessingException, IOException {
         if (value == null) return null;
         return _mapper.readValue(value, type);
     }

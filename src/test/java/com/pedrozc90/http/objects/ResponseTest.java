@@ -11,18 +11,17 @@ class ResponseTest {
 
     @Test
     void testConstructorCreatesResponse() {
-        final Response<String> response = new Response<>(
+        final Response response = new Response(
             HttpStatus.OK,
             Collections.singletonMap("Content-Type", "application/json"),
-            "{\"message\":\"hello\"}",
-            String.class,
+            "{\"message\":\"hello\"}".getBytes(),
             0
         );
 
         assertEquals(HttpStatus.OK, response.getStatus());
         assertEquals(1, response.getHeaders().size());
         assertEquals("application/json", response.getHeaders().get("Content-Type"));
-        assertEquals("{\"message\":\"hello\"}", response.getBody());
+        assertEquals("{\"message\":\"hello\"}", response.asString());
     }
 
     @Test
@@ -70,7 +69,7 @@ class ResponseTest {
 
     @Test
     void testGetStatusCodeWithNullStatus() {
-        final Response<Void> response = new Response<>(null, null, null, Void.class, 0);
+        final Response response = new Response(null, null, null, 0);
         assertNull(response.getStatus());
         assertFalse(response.isSuccessful());
         assertFalse(response.isClientError());
@@ -80,8 +79,8 @@ class ResponseTest {
 
     @Test
     void testEquality() {
-        final Response<String> r1 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", String.class, 0);
-        final Response<String> r2 = new Response<>(HttpStatus.OK, Collections.emptyMap(), "body", String.class, 0);
+        final Response r1 = new Response(HttpStatus.OK, Collections.emptyMap(), "body".getBytes(), 0);
+        final Response r2 = new Response(HttpStatus.OK, Collections.emptyMap(), "body".getBytes(), 0);
 
         assertEquals(r1, r2);
         assertEquals(r1.hashCode(), r2.hashCode());
@@ -89,13 +88,13 @@ class ResponseTest {
 
     @Test
     void testToString() {
-        final Response<Void> response = buildResponse(HttpStatus.OK);
+        final Response response = buildResponse(HttpStatus.OK);
         final String str = response.toString();
         assertTrue(str.contains("OK"));
     }
 
     /* --- Helpers --- */
-    private static Response<Void> buildResponse(final HttpStatus status) {
-        return new Response<>(status, Collections.emptyMap(), null, Void.class, 0);
+    private static Response buildResponse(final HttpStatus status) {
+        return new Response(status, Collections.emptyMap(), null, 0);
     }
 }
