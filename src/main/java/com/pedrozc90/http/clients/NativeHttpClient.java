@@ -7,6 +7,7 @@ import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
 import com.pedrozc90.http.utils.JsonUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -63,7 +64,7 @@ public class NativeHttpClient implements HttpClient {
             // read response body
             try (final InputStream is = resolved.isError() ? connection.getErrorStream() : connection.getInputStream()) {
                 if (is != null) {
-                    content = is.readAllBytes();
+                    content = readBytes(is);
                 }
 
                 final Response response = Response.of(status, headers, content, start);
@@ -123,6 +124,16 @@ public class NativeHttpClient implements HttpClient {
         });
 
         return out;
+    }
+
+    private static byte[] readBytes(final InputStream is) throws IOException {
+        final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        final byte[] chunk = new byte[8192];
+        int nRead;
+        while ((nRead = is.read(chunk)) != -1) {
+            buffer.write(chunk, 0, nRead);
+        }
+        return buffer.toByteArray();
     }
 
 }

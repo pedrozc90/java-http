@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class ResponseTest {
@@ -99,13 +98,13 @@ class ResponseTest {
     @Test
     public void testSerialization() throws JsonProcessingException {
         final long start = System.currentTimeMillis();
-        final Map<String, String> headers = Map.of("header", "value");
+        final Map<String, String> headers = Collections.singletonMap("header", "value");
         final String payload = "Sanity Check";
 
         final Response response = Response.of(HttpStatus.NOT_FOUND, headers, payload.getBytes(), start);
 
         final String result = JsonUtils.toString(response);
-        assertTrue(result.contains("\"status\": 404"));
+        assertTrue(result.contains("\"status\" : 404"));
         assertTrue(result.contains("\"headers\""));
         assertTrue(result.contains("\"payload\""));
     }

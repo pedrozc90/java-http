@@ -8,13 +8,13 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.pedrozc90.http.enums.ContentType;
 import com.pedrozc90.http.enums.HttpStatus;
 import com.pedrozc90.http.exceptions.HttpResponseException;
+import com.pedrozc90.http.objects.HttpFile;
 import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.io.File;
 import java.io.IOException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -122,13 +122,15 @@ public class NativeHttpClientTest {
         final byte[] body = response.getPayload();
         assertNotNull(body);
 
-        final File result = response.asFile();
+        final HttpFile result = response.asFile();
         assertNotNull(result);
-        assertTrue(result.exists());
-        assertTrue(result.getName().startsWith("sanity-check"));
-        assertTrue(result.getName().endsWith(".txt"));
+        assertNotNull(result.getFile());
+        assertTrue(result.getFile().exists());
+        assertEquals("sanity-check.txt", result.getFilename());
+        assertTrue(result.getContentType().contains("text/plain"));
+        assertTrue(result.getSize() > 0);
 
-        result.delete();
+        result.getFile().delete();
     }
 
     @Test

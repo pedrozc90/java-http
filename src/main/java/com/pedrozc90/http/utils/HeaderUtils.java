@@ -3,7 +3,7 @@ package com.pedrozc90.http.utils;
 public class HeaderUtils {
 
     public static String getFilenameFromContentDisposition(final String value) {
-        if (value == null || value.isBlank()) return null;
+        if (value == null || value.trim().isEmpty()) return null;
 
         for (final String part : value.split(";")) {
             final String trimmed = part.trim();

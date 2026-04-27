@@ -56,7 +56,6 @@ public class Request<T> {
     @JsonIgnore
     private final Charset charset = StandardCharsets.UTF_8;
 
-    @JsonCreator
     public Request(
         @JsonProperty(value = "url") final String url,
         @JsonProperty(value = "method") final HttpMethod method,

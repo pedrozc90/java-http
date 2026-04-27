@@ -3,10 +3,14 @@ package com.pedrozc90.http.objects;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.pedrozc90.http.enums.HttpHeader;
 import com.pedrozc90.http.enums.HttpStatus;
@@ -20,6 +24,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 /**
@@ -27,6 +32,7 @@ import java.util.Map;
  */
 @Data
 @JsonSerialize(using = Response.Serializer.class)
+@JsonDeserialize(using = Response.Deserializer.class)
 public class Response {
 
     /**
@@ -113,23 +119,32 @@ public class Response {
         return asString(StandardCharsets.UTF_8);
     }
 
-    public File asFile() throws IOException {
-        String prefix = "res";
-        String suffix = "";
-
+    /**
+     * Saves the response payload to disk and returns an {@link HttpFile} with the
+     * original file metadata.
+     *
+     * <p>The file is stored at {@code /tmp/<filename>} when a filename can be parsed
+     * from the {@code Content-Disposition} header; otherwise a unique temp file is
+     * created via {@link Files#createTempFile}.
+     */
+    public HttpFile asFile() throws IOException {
         final String contentDisposition = headers != null ? headers.get(HttpHeader.CONTENT_DISPOSITION) : null;
-        if (contentDisposition != null && !contentDisposition.isBlank()) {
-            final String filename = HeaderUtils.getFilenameFromContentDisposition(contentDisposition);
-            if (filename != null) {
-                final int dot = filename.lastIndexOf('.');
-                prefix = dot > 0 ? filename.substring(0, dot) : filename;
-                suffix = dot > 0 ? filename.substring(dot) : "";
-            }
+        final String contentType = headers != null ? headers.get(HttpHeader.CONTENT_TYPE) : null;
+
+        String filename = null;
+        if (contentDisposition != null && !contentDisposition.trim().isEmpty()) {
+            filename = HeaderUtils.getFilenameFromContentDisposition(contentDisposition);
         }
 
-        final Path tmp = Files.createTempFile(prefix, suffix);
+        final Path tmp;
+        if (filename != null) {
+            tmp = Paths.get(System.getProperty("java.io.tmpdir"), filename);
+        } else {
+            tmp = Files.createTempFile("http-download-", "");
+        }
+
         Files.write(tmp, payload);
-        return tmp.toFile();
+        return new HttpFile(tmp.toFile(), filename, contentType, payload != null ? payload.length : 0);
     }
 
     public static Response of(final HttpStatus status, final Map<String, String> headers, final byte[] body, final long start) {
@@ -202,11 +217,64 @@ public class Response {
 
         private static String findHeader(final Map<String, String> headers, final String name) {
             if (headers == null) return null;
-            return headers.entrySet().stream()
-                .filter(e -> name.equalsIgnoreCase(e.getKey()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null);
+            for (final Map.Entry<String, String> entry : headers.entrySet()) {
+                if (name.equalsIgnoreCase(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+            return null;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Jackson Deserializer — mirrors the smart payload serialization
+    // -------------------------------------------------------------------------
+
+    /**
+     * Custom Jackson deserializer for {@link Response}.
+     * <p>
+     * Reverses the smart payload serialization:
+     * <ul>
+     *   <li>JSON object/array — serialized back to UTF-8 bytes</li>
+     *   <li>text string — converted to UTF-8 bytes</li>
+     *   <li>null or absent — {@code null}</li>
+     * </ul>
+     */
+    public static class Deserializer extends StdDeserializer<Response> {
+
+        public Deserializer() {
+            super(Response.class);
+        }
+
+        @Override
+        public Response deserialize(final JsonParser p, final DeserializationContext ctx) throws IOException {
+            final JsonNode node = p.getCodec().readTree(p);
+
+            final HttpStatus status = node.has("status")
+                ? HttpStatus.resolve(node.get("status").asInt(-1))
+                : HttpStatus.NONE;
+
+            @SuppressWarnings("unchecked")
+            final Map<String, String> headers = node.has("headers")
+                ? JsonUtils.getMapper().convertValue(node.get("headers"), Map.class)
+                : null;
+
+            final long elapsed = node.has("elapsed") ? node.get("elapsed").asLong(0L) : 0L;
+
+            final byte[] payload = deserializePayload(node.get("payload"));
+
+            return new Response(status, headers, payload, elapsed);
+        }
+
+        private static byte[] deserializePayload(final JsonNode payloadNode) throws IOException {
+            if (payloadNode == null || payloadNode.isNull()) return null;
+
+            if (payloadNode.isTextual()) {
+                return payloadNode.asText().getBytes(StandardCharsets.UTF_8);
+            }
+
+            // JSON object or array — write back to compact JSON bytes
+            return JsonUtils.getMapper().writeValueAsBytes(payloadNode);
         }
     }
 

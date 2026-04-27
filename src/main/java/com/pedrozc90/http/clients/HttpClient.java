@@ -11,7 +11,7 @@ import java.util.concurrent.Executor;
  * Abstraction for executing HTTP requests.
  *
  * <p>Implementations may wrap any underlying HTTP client library
- * (e.g. Apache HttpClient, Play WS, OkHttp, Java 11 {@code HttpClient}).
+ * (e.g. Apache HttpClient, Play WS, OkHttp).
  */
 public interface HttpClient {
 
@@ -25,5 +25,14 @@ public interface HttpClient {
     Response execute(final Request<?> request) throws HttpResponseException;
 
 
-    CompletableFuture<Response> async(final Request<?> request, final Executor executor) throws HttpResponseException;
+    /**
+     * Executes the given HTTP request asynchronously.
+     *
+     * <p>Any exception during execution is wrapped in a {@link java.util.concurrent.CompletionException}.
+     *
+     * @param request  the request to execute; must not be {@code null}
+     * @param executor the executor used to run the async task
+     * @return a future that completes with the HTTP response
+     */
+    CompletableFuture<Response> async(final Request<?> request, final Executor executor);
 }
