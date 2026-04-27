@@ -1,5 +1,6 @@
 package com.pedrozc90.http.objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.pedrozc90.http.enums.HttpHeader;
 import com.pedrozc90.http.enums.HttpStatus;
+import com.pedrozc90.http.utils.HeaderUtils;
 import com.pedrozc90.http.utils.JsonUtils;
 import lombok.Data;
 
@@ -45,8 +47,25 @@ public class Response {
     @JsonProperty(value = "payload")
     private final byte[] payload;
 
+    @JsonProperty(value = "length")
+    private final long length;
+
     @JsonProperty(value = "elapsed")
     private final long elapsed;
+
+    @JsonCreator
+    public Response(
+        @JsonProperty(value = "status") final HttpStatus status,
+        @JsonProperty(value = "headers") final Map<String, String> headers,
+        @JsonProperty(value = "payload") final byte[] payload,
+        @JsonProperty(value = "elapsed") final long elapsed
+    ) {
+        this.status = status;
+        this.headers = headers;
+        this.payload = payload;
+        this.length = (payload != null) ? payload.length : 0;
+        this.elapsed = elapsed;
+    }
 
     // -------------------------------------------------------------------------
     // Convenience status-check methods
@@ -100,7 +119,7 @@ public class Response {
 
         final String contentDisposition = headers != null ? headers.get(HttpHeader.CONTENT_DISPOSITION) : null;
         if (contentDisposition != null && !contentDisposition.isBlank()) {
-            final String filename = parseFilename(contentDisposition);
+            final String filename = HeaderUtils.getFilenameFromContentDisposition(contentDisposition);
             if (filename != null) {
                 final int dot = filename.lastIndexOf('.');
                 prefix = dot > 0 ? filename.substring(0, dot) : filename;
@@ -111,20 +130,6 @@ public class Response {
         final Path tmp = Files.createTempFile(prefix, suffix);
         Files.write(tmp, payload);
         return tmp.toFile();
-    }
-
-    private static String parseFilename(final String contentDisposition) {
-        for (final String part : contentDisposition.split(";")) {
-            final String trimmed = part.trim();
-            if (trimmed.startsWith("filename=")) {
-                String name = trimmed.substring("filename=".length()).trim();
-                if (name.startsWith("\"") && name.endsWith("\"")) {
-                    name = name.substring(1, name.length() - 1);
-                }
-                return name;
-            }
-        }
-        return null;
     }
 
     public static Response of(final HttpStatus status, final Map<String, String> headers, final byte[] body, final long start) {
@@ -158,12 +163,16 @@ public class Response {
 
         @Override
         public void serialize(final Response response, final JsonGenerator gen, final SerializerProvider provider) throws IOException {
-            gen.writeStartObject();
-            provider.defaultSerializeField("status", response.getStatus(), gen);
-            provider.defaultSerializeField("headers", response.getHeaders(), gen);
-            gen.writeNumberField("elapsed", response.getElapsed());
-            serializePayload(response, gen);
-            gen.writeEndObject();
+            if (response == null) {
+                gen.writeNull();
+            } else {
+                gen.writeStartObject();
+                provider.defaultSerializeField("status", response.getStatus(), gen);
+                provider.defaultSerializeField("headers", response.getHeaders(), gen);
+                gen.writeNumberField("elapsed", response.getElapsed());
+                serializePayload(response, gen);
+                gen.writeEndObject();
+            }
         }
 
         private static void serializePayload(final Response response, final JsonGenerator gen) throws IOException {

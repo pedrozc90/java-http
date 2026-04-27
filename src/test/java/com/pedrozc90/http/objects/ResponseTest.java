@@ -1,9 +1,12 @@
 package com.pedrozc90.http.objects;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pedrozc90.http.enums.HttpStatus;
+import com.pedrozc90.http.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -91,6 +94,28 @@ class ResponseTest {
         final Response response = buildResponse(HttpStatus.OK);
         final String str = response.toString();
         assertTrue(str.contains("OK"));
+    }
+
+    @Test
+    public void testSerialization() throws JsonProcessingException {
+        final long start = System.currentTimeMillis();
+        final Map<String, String> headers = Map.of("header", "value");
+        final String payload = "Sanity Check";
+
+        final Response response = Response.of(HttpStatus.NOT_FOUND, headers, payload.getBytes(), start);
+
+        final String result = JsonUtils.toString(response);
+        assertTrue(result.contains("\"status\": 404"));
+        assertTrue(result.contains("\"headers\""));
+        assertTrue(result.contains("\"payload\""));
+    }
+
+    @Test
+    public void testDeserialization() throws JsonProcessingException {
+        final String json = "{\"status\":404,\"headers\":{\"header\":\"value\"},\"payload\":\"Sanity Check\"}";
+
+        final Response result = JsonUtils.toObject(json, Response.class);
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatus());
     }
 
     /* --- Helpers --- */

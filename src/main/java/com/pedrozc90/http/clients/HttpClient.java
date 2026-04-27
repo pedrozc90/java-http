@@ -5,6 +5,7 @@ import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Abstraction for executing HTTP requests.
@@ -24,5 +25,5 @@ public interface HttpClient {
     Response execute(final Request<?> request) throws HttpResponseException;
 
 
-    CompletableFuture<Response> async(final Request<?> request);
+    CompletableFuture<Response> async(final Request<?> request, final Executor executor) throws HttpResponseException;
 }

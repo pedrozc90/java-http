@@ -1,5 +1,6 @@
 package com.pedrozc90.http.clients;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pedrozc90.http.enums.HttpStatus;
 import com.pedrozc90.http.exceptions.HttpResponseException;
 import com.pedrozc90.http.objects.Request;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class NativeHttpClient implements HttpClient {
 
@@ -28,49 +30,27 @@ public class NativeHttpClient implements HttpClient {
         Map<String, String> headers = null;
 
         try {
-            // Create a Url object from the url.
-            // final URL url = request.uri.toURL();
+            // create a url object from the url.
             final URL url = new URL(request.getUrl());
 
-            // Open a connection to the URL.
+            final int timeout = request.getTimeout();
+
+            // open a connection to the URL.
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("Connection", "keep-alive");
             connection.setRequestMethod(request.getMethod().name());
+            connection.setRequestProperty("Connection", "keep-alive");
+            connection.setConnectTimeout(timeout);
+            connection.setReadTimeout(timeout);
 
-            final Integer timeout = request.getTimeout();
-            if (timeout != null) {
-                connection.setConnectTimeout(timeout);
-                connection.setReadTimeout(timeout);
-            }
-
-            // Set the request headers.
+            // set the request headers.
             request.getHeaders().forEach((key, value) -> connection.setRequestProperty(key, value));
 
-            // Send the request body.
-            final Object body = request.getBody();
-
-            if (body != null) {
-                if (body instanceof byte[]) {
-                    final byte[] bytes = (byte[]) body;
-                    connection.setDoOutput(true);
-                    try (OutputStream os = connection.getOutputStream()) {
-                        os.write(bytes, 0, bytes.length);
-                    }
-                } else {
-                    String str = null;
-                    if (body instanceof String) {
-                        str = (String) body;
-                    } else {
-                        str = JsonUtils.toString(body);
-                    }
-
-                    if (str != null && !str.isBlank()) {
-                        connection.setDoOutput(true);
-                        try (OutputStream os = connection.getOutputStream()) {
-                            byte[] bytes = str.getBytes(request.getCharset());
-                            os.write(bytes, 0, bytes.length);
-                        }
-                    }
+            // send the request body.
+            final byte[] bytes = getBodyBytes(request);
+            if (bytes != null && bytes.length > 0) {
+                connection.setDoOutput(true);
+                try (OutputStream os = connection.getOutputStream()) {
+                    os.write(bytes, 0, bytes.length);
                 }
             }
 
@@ -80,32 +60,27 @@ public class NativeHttpClient implements HttpClient {
 
             final HttpStatus resolved = HttpStatus.resolve(status);
 
-            final InputStream is = resolved.isError() ? connection.getErrorStream() : connection.getInputStream();
-
-            try {
+            // read response body
+            try (final InputStream is = resolved.isError() ? connection.getErrorStream() : connection.getInputStream()) {
                 if (is != null) {
-                    // TODO: improve and handle not text content
                     content = is.readAllBytes();
                 }
+
+                final Response response = Response.of(status, headers, content, start);
+                if (!response.isSuccessful()) {
+                    throw new HttpResponseException(message, request, response);
+                }
+                return response;
             } finally {
                 connection.disconnect();
             }
-
-            final Response response = Response.of(status, headers, content, start);
-
-            if (!resolved.isSuccessful()) {
-                throw new HttpResponseException(message, request, response);
-            }
-
-            return response;
         } catch (IOException e) {
             final Response response = Response.of(status, headers, content, start);
             throw new HttpResponseException(e, request, response);
         }
     }
 
-    @Override
-    public CompletableFuture<Response> async(final Request<?> request) {
+    public CompletableFuture<Response> async(final Request<?> request, final Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return execute(request);
@@ -113,11 +88,31 @@ public class NativeHttpClient implements HttpClient {
                 // TODO: how do we properly handle this?
                 throw e.toCompletionException();
             }
-        });
+        }, executor);
     }
 
     /* --- Helpers --- */
-    private static Map<String, String> getResponseHeaders(final HttpURLConnection connection) {
+    private <T> byte[] getBodyBytes(final Request<T> request) throws IOException {
+        final T body = request.getBody();
+
+        if (body == null) return null;
+
+        if (body instanceof byte[]) {
+            return (byte[]) body;
+        } else if (body instanceof String) {
+            final String str = (String) body;
+            return str.getBytes(request.getCharset());
+        } else {
+            try {
+                final String json = JsonUtils.toString(body);
+                return json.getBytes(request.getCharset());
+            } catch (JsonProcessingException e) {
+                throw new IOException("Failed to deserialize body", e);
+            }
+        }
+    }
+
+    private Map<String, String> getResponseHeaders(final HttpURLConnection connection) {
         final Map<String, String> out = new HashMap<>();
 
         final Map<String, List<String>> headers = connection.getHeaderFields();

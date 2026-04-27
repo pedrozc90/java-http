@@ -1,5 +1,6 @@
 package com.pedrozc90.http.objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,13 +48,41 @@ public class Request<T> {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(value = "timeout")
-    private final Integer timeout;
+    private final int timeout;
 
     @JsonIgnore
     private final Class<T> type;
 
     @JsonIgnore
     private final Charset charset = StandardCharsets.UTF_8;
+
+    @JsonCreator
+    public Request(
+        @JsonProperty(value = "url") final String url,
+        @JsonProperty(value = "method") final HttpMethod method,
+        @JsonProperty(value = "headers") final Map<String, String> headers,
+        @JsonProperty(value = "body") final T body,
+        @JsonProperty(value = "timeout") final Integer timeout,
+        final Class<T> type
+    ) {
+        this.url = url;
+        this.method = method;
+        this.headers = headers;
+        this.body = body;
+        this.timeout = (timeout != null) ? Math.max(timeout, 0) : 5_000;
+        this.type = type;
+    }
+
+    @JsonCreator
+    public Request(
+        @JsonProperty(value = "url") final String url,
+        @JsonProperty(value = "method") final HttpMethod method,
+        @JsonProperty(value = "headers") final Map<String, String> headers,
+        @JsonProperty(value = "body") final T body,
+        @JsonProperty(value = "timeout") final Integer timeout
+    ) {
+        this(url, method, headers, body, timeout, null);
+    }
 
     /* --- Helpers --- */
     public static <T> Builder<T> builder() {
@@ -71,14 +100,6 @@ public class Request<T> {
         QueryStep<T> query(final String key, final String value);
 
         HeaderStep<T> header(final String key, final String value);
-
-//        BodyStep<T> get();
-//
-//        BodyStep<T> post();
-//
-//        BodyStep<T> put();
-//
-//        BodyStep<T> delete();
     }
 
     public interface HeaderStep<T> extends MethodStep<T> {
@@ -92,6 +113,7 @@ public class Request<T> {
 
         HeaderStep<T> contentType(final ContentType value);
 
+        HeaderStep<T> timeout(final Integer value);
     }
 
     public interface MethodStep<T> {
@@ -126,13 +148,12 @@ public class Request<T> {
     public static class Builder<T> implements UrlStep<T>, QueryStep<T>, HeaderStep<T>, BodyStep<T>, BuildStep<T> {
 
         private String url;
-        //        private final List<String> paths = new ArrayList<>();
         private final Map<String, String> query = new LinkedHashMap<>();
         private HttpMethod method;
         private final Map<String, String> headers = new LinkedHashMap<>();
         private T body;
         private Class<?> bodyType;
-        private int timeout = 10_000;
+        private Integer timeout;
 
         /* --- URL --- */
         @Override
@@ -147,14 +168,14 @@ public class Request<T> {
             return url(url);
         }
 
-        /* --- QUERY --- */
+        /* --- Query --- */
         @Override
         public QueryStep<T> query(final String key, final String value) {
             query.put(key, value);
             return this;
         }
 
-        /* --- HEADER --- */
+        /* --- Headers --- */
         @Override
         public HeaderStep<T> header(final String key, final String value) {
             headers.put(key, value);
@@ -181,6 +202,13 @@ public class Request<T> {
             return contentType(value.getValue());
         }
 
+        @Override
+        public HeaderStep<T> timeout(Integer value) {
+            this.timeout = value;
+            return this;
+        }
+
+        /* --- Methods --- */
         private BodyStep<T> method(final HttpMethod method) {
             this.method = method;
             return this;
@@ -226,7 +254,7 @@ public class Request<T> {
             return method(HttpMethod.TRACE);
         }
 
-        /* --- BODY --- */
+        /* --- Body --- */
         @Override
         public BodyStep<T> body(final T body, final Class<T> bodyType) {
             this.body = body;
@@ -242,9 +270,7 @@ public class Request<T> {
         @Override
         public Request<T> build() {
             if (url == null) throw new IllegalStateException("URL must be defined");
-
             if (method == null) throw new IllegalStateException("HTTP method must be defined");
-
             return new Request<>(url, method, headers, body, timeout, (Class<T>) bodyType);
         }
 
