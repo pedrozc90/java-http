@@ -1,5 +1,7 @@
 package com.pedrozc90.http.utils;
 
+import com.pedrozc90.http.utils.StringUtils;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,7 +85,7 @@ public class FileUtils {
      * Falls back to Files.probeContentType if available.
      */
     public static String guessContentType(final String filename) {
-        if (filename != null && !filename.trim().isEmpty()) {
+        if (StringUtils.isNotBlank(filename)) {
             String ext = getExtension(filename);
             if (ext != null) {
                 String byExt = _map.get(ext.toLowerCase(Locale.ROOT));
