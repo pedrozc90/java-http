@@ -5,6 +5,8 @@ import com.pedrozc90.http.enums.HttpStatus;
 import com.pedrozc90.http.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
@@ -115,6 +117,95 @@ class ResponseTest {
 
         final Response result = JsonUtils.toObject(json, Response.class);
         assertEquals(HttpStatus.NOT_FOUND, result.getStatus());
+    }
+
+    @Test
+    void testIsJson_true() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/json"), null, 0);
+        assertTrue(response.isJson());
+    }
+
+    @Test
+    void testIsJson_withCharset() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/json; charset=UTF-8"), null, 0);
+        assertTrue(response.isJson());
+    }
+
+    @Test
+    void testIsJson_false() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "text/plain"), null, 0);
+        assertFalse(response.isJson());
+    }
+
+    @Test
+    void testIsJson_noHeaders() {
+        final Response response = new Response(HttpStatus.OK, null, null, 0);
+        assertFalse(response.isJson());
+    }
+
+    @Test
+    void testIsFile_true() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Disposition", "attachment; filename=\"file.pdf\""), null, 0);
+        assertTrue(response.isFile());
+    }
+
+    @Test
+    void testIsFile_false() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/json"), null, 0);
+        assertFalse(response.isFile());
+    }
+
+    @Test
+    void testIsFile_noHeaders() {
+        final Response response = new Response(HttpStatus.OK, null, null, 0);
+        assertFalse(response.isFile());
+    }
+
+    @Test
+    void testGetCharset_fromHeader() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "text/html; charset=ISO-8859-1"), null, 0);
+        assertEquals(Charset.forName("ISO-8859-1"), response.getCharset());
+    }
+
+    @Test
+    void testGetCharset_defaultsToUtf8() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/json"), null, 0);
+        assertEquals(StandardCharsets.UTF_8, response.getCharset());
+    }
+
+    @Test
+    void testGetCharset_noHeaders() {
+        final Response response = new Response(HttpStatus.OK, null, null, 0);
+        assertEquals(StandardCharsets.UTF_8, response.getCharset());
+    }
+
+    @Test
+    void testGetLength_withPayload() {
+        final byte[] payload = "hello".getBytes(StandardCharsets.UTF_8);
+        final Response response = new Response(HttpStatus.OK, null, payload, 0);
+        assertEquals(5, response.getLength());
+    }
+
+    @Test
+    void testGetLength_nullPayload() {
+        final Response response = new Response(HttpStatus.OK, null, null, 0);
+        assertEquals(0, response.getLength());
+    }
+
+    @Test
+    void testAsString_usesHeaderCharset() {
+        final byte[] payload = "héllo".getBytes(StandardCharsets.ISO_8859_1);
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "text/plain; charset=ISO-8859-1"),
+            payload, 0);
+        assertEquals("héllo", response.asString());
     }
 
     /* --- Helpers --- */
