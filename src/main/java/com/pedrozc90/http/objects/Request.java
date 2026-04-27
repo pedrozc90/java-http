@@ -50,11 +50,11 @@ public class Request<T> {
     @JsonProperty(value = "timeout")
     private final int timeout;
 
-    @JsonIgnore
-    private final Class<T> type;
+    @JsonProperty(value = "charset")
+    private final Charset charset;
 
     @JsonIgnore
-    private final Charset charset = StandardCharsets.UTF_8;
+    private final Class<T> type;
 
     public Request(
         @JsonProperty(value = "url") final String url,
@@ -62,6 +62,7 @@ public class Request<T> {
         @JsonProperty(value = "headers") final Map<String, String> headers,
         @JsonProperty(value = "body") final T body,
         @JsonProperty(value = "timeout") final Integer timeout,
+        @JsonProperty(value = "charset") final Charset charset,
         final Class<T> type
     ) {
         this.url = url;
@@ -69,6 +70,7 @@ public class Request<T> {
         this.headers = headers;
         this.body = body;
         this.timeout = (timeout != null) ? Math.max(timeout, 0) : 5_000;
+        this.charset = (charset != null) ? charset : StandardCharsets.UTF_8;
         this.type = type;
     }
 
@@ -80,7 +82,7 @@ public class Request<T> {
         @JsonProperty(value = "body") final T body,
         @JsonProperty(value = "timeout") final Integer timeout
     ) {
-        this(url, method, headers, body, timeout, null);
+        this(url, method, headers, body, timeout, null, null);
     }
 
     /* --- Helpers --- */
@@ -141,6 +143,8 @@ public class Request<T> {
 
     public interface BuildStep<T> {
         Request<T> build();
+
+        Request<T> build(final Charset charset);
     }
 
     @Data
@@ -267,12 +271,17 @@ public class Request<T> {
         }
 
         @Override
-        public Request<T> build() {
+        @SuppressWarnings("unchecked")
+        public Request<T> build(final Charset charset) {
             if (url == null) throw new IllegalStateException("URL must be defined");
             if (method == null) throw new IllegalStateException("HTTP method must be defined");
-            return new Request<>(url, method, headers, body, timeout, (Class<T>) bodyType);
+            return new Request<>(url, method, headers, body, timeout, charset, (Class<T>) bodyType);
         }
 
+        @Override
+        public Request<T> build() {
+            return build(null);
+        }
     }
 
 
