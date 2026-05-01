@@ -1,5 +1,6 @@
 package com.pedrozc90.http.objects;
 
+import com.pedrozc90.http.clients.RetryPolicy;
 import com.pedrozc90.http.enums.ContentType;
 import com.pedrozc90.http.enums.HttpHeader;
 import com.pedrozc90.http.enums.HttpMethod;
@@ -55,6 +56,8 @@ public class RequestBuilder {
         HeaderStep<T> accept(final ContentType value);
 
         HeaderStep<T> timeout(final Integer value);
+
+        HeaderStep<T> retryPolicy(final RetryPolicy policy);
     }
 
     public interface MethodStep<T> {
@@ -101,6 +104,7 @@ public class RequestBuilder {
         private T body;
         private Class<?> bodyType;
         private Integer timeout;
+        private RetryPolicy retryPolicy;
 
         /* --- URL --- */
         @Override
@@ -161,6 +165,12 @@ public class RequestBuilder {
         @Override
         public HeaderStep<T> timeout(final Integer value) {
             this.timeout = value;
+            return this;
+        }
+
+        @Override
+        public HeaderStep<T> retryPolicy(final RetryPolicy policy) {
+            this.retryPolicy = policy;
             return this;
         }
 
@@ -251,7 +261,7 @@ public class RequestBuilder {
                 resolvedUrl = url;
             }
 
-            return new Request<>(resolvedUrl, method, headers, body, timeout, charset, (Class<T>) bodyType);
+            return new Request<>(resolvedUrl, method, headers, body, timeout, charset, (Class<T>) bodyType, retryPolicy);
         }
 
         @Override

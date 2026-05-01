@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +29,7 @@ public class NativeHttpClientTest {
         .options(
             WireMockConfiguration.options()
                 .dynamicPort()
-                .notifier(new ConsoleNotifier(true))
+                .notifier(new ConsoleNotifier(false))
         )
         .build();
 
@@ -42,7 +44,6 @@ public class NativeHttpClientTest {
                 .willReturn(
                     ok()
                         .withHeader("Content-Type", "application/json")
-                        //.withBody("{ \"message\": \"Sanity Check\" }")
                         .withBodyFile("sanity-check.json")
                 )
         );
@@ -158,6 +159,101 @@ public class NativeHttpClientTest {
 
         // the exception message is always set (either from the HTTP status line or auto-generated)
         assertNotNull(cause.getMessage());
+    }
+
+    // -------------------------------------------------------------------------
+    // Retry policy tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void retryShouldSucceedOnFirstAttemptWhenPolicySet() throws HttpResponseException {
+        wiremock.stubFor(
+            get("/ok-retry")
+                .willReturn(ok().withHeader("Content-Type", "application/json").withBody("{}")));
+
+        final Request<?> request = Request.builder()
+            .url(wiremock.url("/ok-retry"))
+            .contentType(ContentType.APPLICATION_JSON)
+            .retryPolicy(RetryPolicy.builder().maxAttempts(3).delayMs(0).build())
+            .get()
+            .build();
+
+        final Response response = client.execute(request);
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatus());
+        wiremock.verify(1, getRequestedFor(urlEqualTo("/ok-retry")));
+    }
+
+    @Test
+    void retryShouldRetryOnRetryableStatus() throws HttpResponseException {
+        wiremock.stubFor(
+            get("/retry-status")
+                .inScenario("retry-status")
+                .whenScenarioStateIs("Started")
+                .willReturn(serviceUnavailable())
+                .willSetStateTo("attempt2"));
+
+        wiremock.stubFor(
+            get("/retry-status")
+                .inScenario("retry-status")
+                .whenScenarioStateIs("attempt2")
+                .willReturn(ok().withHeader("Content-Type", "application/json").withBody("{}")));
+
+        final Request<?> request = Request.builder()
+            .url(wiremock.url("/retry-status"))
+            .retryPolicy(RetryPolicy.builder().maxAttempts(3).delayMs(0).retryOn(503).build())
+            .get()
+            .build();
+
+        final Response response = client.execute(request);
+        assertEquals(HttpStatus.OK, response.getStatus());
+        wiremock.verify(2, getRequestedFor(urlEqualTo("/retry-status")));
+    }
+
+    @Test
+    void retryShouldThrowAfterExhaustingRetries() {
+        wiremock.stubFor(get("/retry-fail").willReturn(serviceUnavailable()));
+
+        final Request<?> request = Request.builder()
+            .url(wiremock.url("/retry-fail"))
+            .retryPolicy(RetryPolicy.builder().maxAttempts(2).delayMs(0).retryOn(503).build())
+            .get()
+            .build();
+
+        assertThrows(HttpResponseException.class, () -> client.execute(request));
+        wiremock.verify(2, getRequestedFor(urlEqualTo("/retry-fail")));
+    }
+
+    @Test
+    void retryShouldNotRetryNonRetryableStatus() {
+        wiremock.stubFor(get("/retry-notfound").willReturn(notFound()));
+
+        final Request<?> request = Request.builder()
+            .url(wiremock.url("/retry-notfound"))
+            .retryPolicy(RetryPolicy.builder().maxAttempts(3).delayMs(0).retryOn(503).build())
+            .get()
+            .build();
+
+        assertThrows(HttpResponseException.class, () -> client.execute(request));
+        wiremock.verify(1, getRequestedFor(urlEqualTo("/retry-notfound")));
+    }
+
+    @Test
+    void asyncShouldSucceedWithRetryPolicy() throws ExecutionException, InterruptedException {
+        wiremock.stubFor(
+            get("/retry-async")
+                .willReturn(ok().withHeader("Content-Type", "application/json").withBody("{}")));
+
+        final Request<?> request = Request.builder()
+            .url(wiremock.url("/retry-async"))
+            .retryPolicy(RetryPolicy.builder().maxAttempts(2).delayMs(0).build())
+            .get()
+            .build();
+
+        final CompletableFuture<Response> future = client.async(request);
+        final Response response = future.get();
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatus());
     }
 
     @Data

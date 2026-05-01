@@ -6,16 +6,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Configuration for the {@link RetryableHttpClient} retry behaviour.
+ * Configuration for the retry behaviour of an HTTP request.
  *
- * <p>Use the builder to configure max attempts, delay between retries, and
- * which HTTP status codes should trigger a retry:
+ * <p>Set a policy on any {@link com.pedrozc90.http.objects.Request} via the builder's
+ * {@code retryPolicy(RetryPolicy)} step; {@link NativeHttpClient} will then automatically
+ * retry that request according to this configuration:
  *
  * <pre>{@code
  * RetryPolicy policy = RetryPolicy.builder()
  *     .maxAttempts(3)
  *     .delayMs(500)
  *     .retryOn(429, 503)
+ *     .build();
+ *
+ * Request<?> request = Request.builder()
+ *     .url("https://api.example.com/data")
+ *     .retryPolicy(policy)
+ *     .get()
  *     .build();
  * }</pre>
  */

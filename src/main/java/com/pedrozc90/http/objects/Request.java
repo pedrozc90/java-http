@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.pedrozc90.http.clients.RetryPolicy;
 import com.pedrozc90.http.enums.HttpMethod;
 import lombok.Data;
 
@@ -53,6 +54,34 @@ public class Request<T> {
     @JsonIgnore
     private final Class<T> type;
 
+    /**
+     * Optional retry policy for this request.
+     * When set, {@link com.pedrozc90.http.clients.NativeHttpClient} will automatically
+     * retry the request according to the policy on retryable status codes or network errors.
+     */
+    @JsonIgnore
+    private final RetryPolicy retryPolicy;
+
+    public Request(
+        @JsonProperty(value = "url") final String url,
+        @JsonProperty(value = "method") final HttpMethod method,
+        @JsonProperty(value = "headers") final Map<String, String> headers,
+        @JsonProperty(value = "body") final T body,
+        @JsonProperty(value = "timeout") final Integer timeout,
+        @JsonProperty(value = "charset") final Charset charset,
+        final Class<T> type,
+        final RetryPolicy retryPolicy
+    ) {
+        this.url = url;
+        this.method = method;
+        this.headers = headers;
+        this.body = body;
+        this.timeout = (timeout != null) ? Math.max(timeout, 0) : 5_000;
+        this.charset = (charset != null) ? charset : StandardCharsets.UTF_8;
+        this.type = type;
+        this.retryPolicy = retryPolicy;
+    }
+
     public Request(
         @JsonProperty(value = "url") final String url,
         @JsonProperty(value = "method") final HttpMethod method,
@@ -62,13 +91,7 @@ public class Request<T> {
         @JsonProperty(value = "charset") final Charset charset,
         final Class<T> type
     ) {
-        this.url = url;
-        this.method = method;
-        this.headers = headers;
-        this.body = body;
-        this.timeout = (timeout != null) ? Math.max(timeout, 0) : 5_000;
-        this.charset = (charset != null) ? charset : StandardCharsets.UTF_8;
-        this.type = type;
+        this(url, method, headers, body, timeout, charset, type, null);
     }
 
     @JsonCreator
