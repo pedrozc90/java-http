@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Map;
 
 public class JsonUtils {
 
@@ -63,6 +64,17 @@ public class JsonUtils {
     public static String toString(final JsonNode value) {
         if (value == null) return null;
         return value.toPrettyString();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> Map<K, V> map(final JsonNode node) {
+        if (node == null) return null;
+        return _mapper.convertValue(node, Map.class);
+    }
+
+    public static byte[] toBytes(final JsonNode node) throws JsonProcessingException {
+        if (node == null) return null;
+        return _mapper.writeValueAsBytes(node);
     }
 
 }

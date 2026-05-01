@@ -16,7 +16,8 @@ import java.util.Map;
  */
 public class RequestBuilder {
 
-    private RequestBuilder() {}
+    private RequestBuilder() {
+    }
 
     // -------------------------------------------------------------------------
     // Step interfaces

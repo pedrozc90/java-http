@@ -30,17 +30,19 @@ public class ResponseDeserializer extends StdDeserializer<Response> {
     @Override
     public Response deserialize(final JsonParser p, final DeserializationContext ctx) throws IOException {
         final JsonNode node = p.getCodec().readTree(p);
+        if (node == null || node.isNull()) return null;
 
         final HttpStatus status = node.has("status")
             ? HttpStatus.resolve(node.get("status").asInt(-1))
             : HttpStatus.NONE;
 
-        @SuppressWarnings("unchecked")
-        final Map<String, String> headers = node.has("headers")
-            ? JsonUtils.getMapper().convertValue(node.get("headers"), Map.class)
+        final Map<String, String> headers = (node.has("headers"))
+            ? JsonUtils.map(node.get("headers"))
             : null;
 
-        final long elapsed = node.has("elapsed") ? node.get("elapsed").asLong(0L) : 0L;
+        final long elapsed = node.has("elapsed")
+            ? node.get("elapsed").asLong(0L)
+            : 0L;
 
         final byte[] payload = deserializePayload(node.get("payload"));
 
@@ -55,7 +57,7 @@ public class ResponseDeserializer extends StdDeserializer<Response> {
         }
 
         // JSON object or array — write back to compact JSON bytes
-        return JsonUtils.getMapper().writeValueAsBytes(payloadNode);
+        return JsonUtils.toBytes(payloadNode);
     }
 
 }

@@ -5,8 +5,6 @@ package com.pedrozc90.http.utils;
  */
 public class StringUtils {
 
-    private StringUtils() {}
-
     /**
      * Returns {@code true} when the value is {@code null} or contains only whitespace.
      */

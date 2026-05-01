@@ -92,7 +92,7 @@ public enum HttpStatus {
     NOT_EXTENDED(510, "Not Extended"),
     NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required");
 
-    private final int value;
+    private final int code;
     private final String reason;
 
     private static final Map<Integer, HttpStatus> _map;
@@ -100,13 +100,13 @@ public enum HttpStatus {
     static {
         final Map<Integer, HttpStatus> map = new HashMap<>();
         for (final HttpStatus status : values()) {
-            map.put(status.value, status);
+            map.put(status.code, status);
         }
         _map = Collections.unmodifiableMap(map);
     }
 
     public int value() {
-        return value;
+        return code;
     }
 
     public String reason() {
@@ -124,35 +124,35 @@ public enum HttpStatus {
      * Returns {@code true} if this status is in the 1xx Informational range.
      */
     public boolean isInformational() {
-        return value >= 100 && value < 200;
+        return code >= 100 && code < 200;
     }
 
     /**
      * Returns {@code true} if this status is in the 2xx Successful range.
      */
     public boolean isSuccessful() {
-        return value >= 200 && value < 300;
+        return code >= 200 && code < 300;
     }
 
     /**
      * Returns {@code true} if this status is in the 3xx Redirection range.
      */
     public boolean isRedirection() {
-        return value >= 300 && value < 400;
+        return code >= 300 && code < 400;
     }
 
     /**
      * Returns {@code true} if this status is in the 4xx Client Error range.
      */
     public boolean isClientError() {
-        return value >= 400 && value < 500;
+        return code >= 400 && code < 500;
     }
 
     /**
      * Returns {@code true} if this status is in the 5xx Server Error range.
      */
     public boolean isServerError() {
-        return value >= 500 && value < 600;
+        return code >= 500 && code < 600;
     }
 
     /**
@@ -170,12 +170,13 @@ public enum HttpStatus {
      * @return the matching {@link HttpStatus}, or {@link #NONE} for unrecognised codes
      */
     public static HttpStatus resolve(final int value) {
+        if (value < 0) return NONE;
         return _map.getOrDefault(value, NONE);
     }
 
     @Override
     public String toString() {
-        return value + " " + reason;
+        return code + " " + reason;
     }
 
     // -------------------------------------------------------------------------
@@ -191,7 +192,7 @@ public enum HttpStatus {
             if (value == null) {
                 gen.writeNull();
             } else {
-                gen.writeNumber(value.value);
+                gen.writeNumber(value.code);
             }
         }
     }

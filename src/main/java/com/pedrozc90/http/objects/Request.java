@@ -82,7 +82,6 @@ public class Request<T> {
         this(url, method, headers, body, timeout, null, null);
     }
 
-    /* --- Helpers --- */
     public static <T> RequestBuilder.Builder<T> builder() {
         return new RequestBuilder.Builder<>();
     }

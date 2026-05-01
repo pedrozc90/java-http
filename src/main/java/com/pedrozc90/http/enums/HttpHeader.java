@@ -1,14 +1,8 @@
 package com.pedrozc90.http.enums;
 
-/**
- * Common HTTP header field names.
- */
 public class HttpHeader {
 
-    // -------------------------------------------------------------------------
-    // Request headers
-    // -------------------------------------------------------------------------
-
+    /* --- Request Headers --- */
     public static final String ACCEPT = "Accept";
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
     public static final String ACCEPT_LANGUAGE = "Accept-Language";
@@ -30,10 +24,7 @@ public class HttpHeader {
     public static final String TRANSFER_ENCODING = "Transfer-Encoding";
     public static final String USER_AGENT = "User-Agent";
 
-    // -------------------------------------------------------------------------
-    // Response headers
-    // -------------------------------------------------------------------------
-
+    /* --- Response Headers --- */
     public static final String CONTENT_DISPOSITION = "Content-Disposition";
     public static final String CONTENT_RANGE = "Content-Range";
     public static final String ETAG = "ETag";
@@ -44,10 +35,7 @@ public class HttpHeader {
     public static final String VARY = "Vary";
     public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
-    // -------------------------------------------------------------------------
-    // Common / forwarding headers
-    // -------------------------------------------------------------------------
-
+    /* --- Forwarding Headers --- */
     public static final String X_FORWARDED_FOR = "X-Forwarded-For";
     public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
     public static final String X_REQUEST_ID = "X-Request-ID";

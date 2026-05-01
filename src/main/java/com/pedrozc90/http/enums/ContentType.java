@@ -1,10 +1,11 @@
 package com.pedrozc90.http.enums;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
-@Getter
+import java.util.HashMap;
+import java.util.Map;
+
 @RequiredArgsConstructor
 @ToString
 public enum ContentType {
@@ -40,6 +41,23 @@ public enum ContentType {
     IMAGE_WEBP("image/webp"),
     IMAGE_SVG_XML("image/svg+xml");
 
+    private static final Map<String, ContentType> _map = new HashMap<>();
+
+    static {
+        for (final ContentType type : values()) {
+            _map.put(type.value, type);
+        }
+    }
+
     private final String value;
+
+    public String value() {
+        return value;
+    }
+
+    public static ContentType resolve(final String value) {
+        if (value == null) return null;
+        return _map.getOrDefault(value, ContentType.APPLICATION_OCTET_STREAM);
+    }
 
 }

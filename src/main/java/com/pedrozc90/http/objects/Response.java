@@ -6,17 +6,17 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.pedrozc90.http.enums.HttpHeader;
 import com.pedrozc90.http.enums.HttpStatus;
+import com.pedrozc90.http.utils.FileUtils;
 import com.pedrozc90.http.utils.HeaderUtils;
 import com.pedrozc90.http.utils.JsonUtils;
 import com.pedrozc90.http.utils.StringUtils;
 import lombok.Data;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 
 /**
@@ -167,15 +167,11 @@ public class Response {
             filename = HeaderUtils.getFilenameFromContentDisposition(contentDisposition);
         }
 
-        final Path tmp;
-        if (filename != null) {
-            tmp = Paths.get(System.getProperty("java.io.tmpdir"), filename);
-        } else {
-            tmp = Files.createTempFile("http-download-", "");
-        }
+        final File tmp = FileUtils.createTempFile(filename);
 
-        Files.write(tmp, payload);
-        return new HttpFile(tmp.toFile(), filename, contentType, payload != null ? payload.length : 0);
+        Files.write(tmp.toPath(), payload);
+
+        return new HttpFile(tmp, filename, contentType, payload != null ? payload.length : 0);
     }
 
     // -------------------------------------------------------------------------

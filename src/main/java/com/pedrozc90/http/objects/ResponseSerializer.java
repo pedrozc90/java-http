@@ -2,6 +2,7 @@ package com.pedrozc90.http.objects;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.pedrozc90.http.enums.HttpHeader;
@@ -53,7 +54,8 @@ public class ResponseSerializer extends StdSerializer<Response> {
 
         if (contentType != null && contentType.contains("application/json")) {
             try {
-                gen.writeTree(JsonUtils.getMapper().readTree(payload));
+                final JsonNode json = JsonUtils.toJson(payload);
+                gen.writeTree(json);
             } catch (JsonProcessingException e) {
                 gen.writeString(new String(payload, response.getCharset()));
             }

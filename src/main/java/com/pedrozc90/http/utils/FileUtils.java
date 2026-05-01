@@ -1,7 +1,7 @@
 package com.pedrozc90.http.utils;
 
-import com.pedrozc90.http.utils.StringUtils;
-
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class FileUtils {
 
+    private static final String _dir = System.getProperty("java.io.tmpdir");
     private static final Map<String, String> _map;
 
     static {
@@ -64,6 +65,14 @@ public class FileUtils {
         tmp.put("lbl", "text/label");
 
         _map = Collections.unmodifiableMap(tmp);
+    }
+
+    public static File createTempFile(final String filename) throws IOException {
+        final String ext = getExtension(filename);
+        final String basename = filename.replace("." + ext, "");
+        final File file = File.createTempFile(basename, ext);
+        file.deleteOnExit();
+        return file;
     }
 
     /**
