@@ -3,6 +3,8 @@ package com.pedrozc90.http.clients;
 import com.pedrozc90.http.exceptions.HttpResponseException;
 import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -12,17 +14,82 @@ import java.util.concurrent.Executor;
  *
  * <p>Implementations may wrap any underlying HTTP client library
  * (e.g. Apache HttpClient, Play WS, OkHttp).
+ *
+ * <p>Implementations only need to provide {@link #executeOnce(Request)}.
+ * Retry logic (when a {@link RetryPolicy} is set on the request) is handled
+ * automatically by the {@link #execute(Request)} default method in this interface
+ * and does not need to be repeated in every implementation.
  */
 public interface HttpClient {
 
+    Logger log = LoggerFactory.getLogger(HttpClient.class);
+
     /**
-     * Executes the given HTTP request and deserializes the response body to {@code responseType}.
+     * Performs a single HTTP attempt with no retry logic.
+     * Implementations must provide this method.
      *
-     * @param request      the request to execute; must not be {@code null}
-     * @return the HTTP response with the deserialized body
-     * @throws HttpResponseException if the request could not be executed
+     * @param request the request to execute; must not be {@code null}
+     * @return the HTTP response
+     * @throws HttpResponseException if the request fails
      */
-    Response execute(final Request<?> request) throws HttpResponseException;
+    Response executeOnce(final Request<?> request) throws HttpResponseException;
+
+    /**
+     * Executes the given HTTP request, automatically retrying according to the
+     * {@link RetryPolicy} attached to the request (if any).
+     *
+     * <p>When no {@link RetryPolicy} is set on the request this is equivalent
+     * to a single call to {@link #executeOnce(Request)}.
+     *
+     * @param request the request to execute; must not be {@code null}
+     * @return the HTTP response
+     * @throws HttpResponseException if all attempts fail
+     */
+    default Response execute(final Request<?> request) throws HttpResponseException {
+        final RetryPolicy policy = request.getRetryPolicy();
+
+        if (policy == null) {
+            return executeOnce(request);
+        }
+
+        HttpResponseException lastException = null;
+
+        for (int attempt = 1; attempt <= policy.getMaxAttempts(); attempt++) {
+            try {
+                final Response response = executeOnce(request);
+
+                if (response.getStatus() != null
+                    && policy.isRetryable(response.getStatus().value())
+                    && attempt < policy.getMaxAttempts()) {
+                    log.warn("Retrying request {} {} after retryable status {} (attempt {}/{})",
+                        request.getMethod(), request.getUrl(),
+                        response.getStatus(), attempt, policy.getMaxAttempts());
+                    RetryPolicy.sleep(policy.getDelayMs());
+                    continue;
+                }
+
+                return response;
+            } catch (HttpResponseException e) {
+                lastException = e;
+
+                final boolean isRetryableStatus = e.getResponse() != null
+                    && e.getResponse().getStatus() != null
+                    && policy.isRetryable(e.getResponse().getStatus().value());
+                final boolean isRetryableException = e.getCause() != null && policy.isRetryOnException();
+
+                if ((isRetryableStatus || isRetryableException) && attempt < policy.getMaxAttempts()) {
+                    log.warn("Retrying request {} {} after error (attempt {}/{}): {}",
+                        request.getMethod(), request.getUrl(),
+                        attempt, policy.getMaxAttempts(), e.getMessage());
+                    RetryPolicy.sleep(policy.getDelayMs());
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        throw lastException;
+    }
 
     /**
      * Executes the given HTTP request asynchronously using the provided executor.

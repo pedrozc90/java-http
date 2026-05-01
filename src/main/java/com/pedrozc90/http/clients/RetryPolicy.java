@@ -85,6 +85,21 @@ public final class RetryPolicy {
     }
 
     /**
+     * Sleeps for the given number of milliseconds, swallowing {@link InterruptedException}
+     * and restoring the thread interrupt flag.
+     *
+     * @param millis milliseconds to sleep; values &le; 0 are ignored
+     */
+    static void sleep(final long millis) {
+        if (millis <= 0) return;
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
      * Returns a new builder pre-configured with sensible defaults:
      * 3 attempts, 1 s delay, retry on 429 / 502 / 503 / 504, retry on exception.
      *

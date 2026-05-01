@@ -6,6 +6,8 @@ import com.pedrozc90.http.exceptions.JsonException;
 import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
 import com.pedrozc90.http.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,11 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 
 public class NativeHttpClient implements HttpClient {
 
-    private static final Logger log = Logger.getLogger(NativeHttpClient.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(NativeHttpClient.class);
 
     private final Executor executor;
 
@@ -35,55 +36,7 @@ public class NativeHttpClient implements HttpClient {
     }
 
     @Override
-    public Response execute(final Request<?> request) throws HttpResponseException {
-        final RetryPolicy policy = request.getRetryPolicy();
-
-        if (policy == null) {
-            return executeOnce(request);
-        }
-
-        HttpResponseException lastException = null;
-
-        for (int attempt = 1; attempt <= policy.getMaxAttempts(); attempt++) {
-            try {
-                final Response response = executeOnce(request);
-
-                if (response.getStatus() != null
-                    && policy.isRetryable(response.getStatus().value())
-                    && attempt < policy.getMaxAttempts()) {
-                    log.warning(String.format(
-                        "Retrying request %s %s after retryable status %s (attempt %d/%d)",
-                        request.getMethod(), request.getUrl(),
-                        response.getStatus(), attempt, policy.getMaxAttempts()));
-                    sleep(policy.getDelayMs());
-                    continue;
-                }
-
-                return response;
-            } catch (HttpResponseException e) {
-                lastException = e;
-
-                final boolean isRetryableStatus = e.getResponse() != null
-                    && e.getResponse().getStatus() != null
-                    && policy.isRetryable(e.getResponse().getStatus().value());
-                final boolean isRetryableException = e.getCause() != null && policy.isRetryOnException();
-
-                if ((isRetryableStatus || isRetryableException) && attempt < policy.getMaxAttempts()) {
-                    log.warning(String.format(
-                        "Retrying request %s %s after error (attempt %d/%d): %s",
-                        request.getMethod(), request.getUrl(),
-                        attempt, policy.getMaxAttempts(), e.getMessage()));
-                    sleep(policy.getDelayMs());
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        throw lastException;
-    }
-
-    private Response executeOnce(final Request<?> request) throws HttpResponseException {
+    public Response executeOnce(final Request<?> request) throws HttpResponseException {
         final long start = System.currentTimeMillis();
 
         int status = -1;
@@ -131,17 +84,24 @@ public class NativeHttpClient implements HttpClient {
                 }
 
                 final Response response = Response.of(status, headers, content, start);
-                log.info(String.format("Request %s %s -> %d (%d ms)",
-                    request.getMethod(), request.getUrl(), status, response.getElapsed()));
-                if (!response.isSuccessful()) {
+
+                if (response.isSuccessful()) {
+                    log.info("Request {} {} -> {} ({}) ({} ms)",
+                        request.getMethod(), request.getUrl(),
+                        resolved.value(), resolved.reason(), response.getElapsed());
+                    return response;
+                } else {
+                    log.warn("Request {} {} -> {} ({}) ({} ms)",
+                        request.getMethod(), request.getUrl(),
+                        resolved.value(), resolved.reason(), response.getElapsed());
                     throw new HttpResponseException(message, request, response);
                 }
-                return response;
             } finally {
                 connection.disconnect();
             }
         } catch (IOException e) {
             final Response response = Response.of(status, headers, content, start);
+            log.error("Request {} {} -> network error", request.getMethod(), request.getUrl(), e);
             throw new HttpResponseException(e, request, response);
         }
     }
@@ -205,15 +165,6 @@ public class NativeHttpClient implements HttpClient {
             buffer.write(chunk, 0, nRead);
         }
         return buffer.toByteArray();
-    }
-
-    private static void sleep(final long millis) {
-        if (millis <= 0) return;
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
 }
