@@ -1,11 +1,11 @@
 package com.pedrozc90.http.objects;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.pedrozc90.http.enums.HttpHeader;
+import com.pedrozc90.http.exceptions.JsonException;
 import com.pedrozc90.http.utils.HeaderUtils;
 import com.pedrozc90.http.utils.JsonUtils;
 
@@ -56,7 +56,7 @@ public class ResponseSerializer extends StdSerializer<Response> {
             try {
                 final JsonNode json = JsonUtils.toJson(payload);
                 gen.writeTree(json);
-            } catch (JsonProcessingException e) {
+            } catch (JsonException e) {
                 gen.writeString(new String(payload, response.getCharset()));
             }
         } else if (contentType != null && contentType.startsWith("text/")) {
