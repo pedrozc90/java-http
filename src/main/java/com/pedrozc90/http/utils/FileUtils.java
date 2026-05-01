@@ -13,9 +13,6 @@ import java.util.Map;
 
 public class FileUtils {
 
-    private FileUtils() {
-    }
-
     private static final String _dir = System.getProperty("java.io.tmpdir");
     private static final Map<String, String> _map;
 
@@ -68,6 +65,10 @@ public class FileUtils {
         tmp.put("lbl", "text/label");
 
         _map = Collections.unmodifiableMap(tmp);
+    }
+
+    private FileUtils() {
+        // you are not allowed to instantiate this class
     }
 
     public static File createTempFile(final String filename) throws IOException {

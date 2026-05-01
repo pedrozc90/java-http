@@ -66,9 +66,9 @@ class ResponseTest {
 
     @Test
     void testGetStatusCode() {
-        assertEquals(200, buildResponse(HttpStatus.OK).getStatus().value());
-        assertEquals(404, buildResponse(HttpStatus.NOT_FOUND).getStatus().value());
-        assertEquals(500, buildResponse(HttpStatus.INTERNAL_SERVER_ERROR).getStatus().value());
+        assertEquals(200, buildResponse(HttpStatus.OK).getStatus().code());
+        assertEquals(404, buildResponse(HttpStatus.NOT_FOUND).getStatus().code());
+        assertEquals(500, buildResponse(HttpStatus.INTERNAL_SERVER_ERROR).getStatus().code());
     }
 
     @Test

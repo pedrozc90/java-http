@@ -24,10 +24,7 @@ public class RequestBuilder {
     private RequestBuilder() {
     }
 
-    // -------------------------------------------------------------------------
-    // Step interfaces
-    // -------------------------------------------------------------------------
-
+    /* --- Step interfaces --- */
     public interface UrlStep<T> {
         QueryStep<T> url(final String url);
 
@@ -90,10 +87,7 @@ public class RequestBuilder {
         Request<T> build(final Charset charset);
     }
 
-    // -------------------------------------------------------------------------
-    // Builder implementation
-    // -------------------------------------------------------------------------
-
+    /* --- Builder --- */
     @Data
     public static class Builder<T> implements UrlStep<T>, QueryStep<T>, HeaderStep<T>, BodyStep<T>, BuildStep<T> {
 

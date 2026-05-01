@@ -13,6 +13,7 @@ import java.util.Map;
 public class JsonUtils {
 
     private JsonUtils() {
+        // you are not allowed to instantiate this class
     }
 
     private static ObjectMapper _mapper = createMapper();

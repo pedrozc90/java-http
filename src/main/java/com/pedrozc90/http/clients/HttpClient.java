@@ -58,12 +58,8 @@ public interface HttpClient {
             try {
                 final Response response = executeOnce(request);
 
-                if (response.getStatus() != null
-                    && policy.isRetryable(response.getStatus().value())
-                    && attempt < policy.getMaxAttempts()) {
-                    log.warn("Retrying request {} {} after retryable status {} (attempt {}/{})",
-                        request.getMethod(), request.getUrl(),
-                        response.getStatus(), attempt, policy.getMaxAttempts());
+                if (policy.isRetryable(response.getStatus()) && attempt < policy.getMaxAttempts()) {
+                    log.warn("Retrying request {} {} after retryable status {} (attempt {}/{})", request.getMethod(), request.getUrl(), response.getStatus(), attempt, policy.getMaxAttempts());
                     RetryPolicy.sleep(policy.getDelayMs());
                     continue;
                 }
@@ -72,15 +68,13 @@ public interface HttpClient {
             } catch (HttpResponseException e) {
                 lastException = e;
 
-                final boolean isRetryableStatus = e.getResponse() != null
-                    && e.getResponse().getStatus() != null
-                    && policy.isRetryable(e.getResponse().getStatus().value());
+                final Response response = e.getResponse();
+
+                final boolean isRetryableStatus = response != null && policy.isRetryable(response.getStatus());
                 final boolean isRetryableException = e.getCause() != null && policy.isRetryOnException();
 
                 if ((isRetryableStatus || isRetryableException) && attempt < policy.getMaxAttempts()) {
-                    log.warn("Retrying request {} {} after error (attempt {}/{}): {}",
-                        request.getMethod(), request.getUrl(),
-                        attempt, policy.getMaxAttempts(), e.getMessage());
+                    log.warn("Retrying request {} {} after error (attempt {}/{}): {}", request.getMethod(), request.getUrl(), attempt, policy.getMaxAttempts(), e.getMessage());
                     RetryPolicy.sleep(policy.getDelayMs());
                 } else {
                     throw e;
@@ -88,6 +82,7 @@ public interface HttpClient {
             }
         }
 
+        // TODO: should we throw the last exception or the last response?
         throw lastException;
     }
 

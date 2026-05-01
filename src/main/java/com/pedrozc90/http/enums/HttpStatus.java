@@ -105,7 +105,7 @@ public enum HttpStatus {
         _map = Collections.unmodifiableMap(map);
     }
 
-    public int value() {
+    public int code() {
         return code;
     }
 

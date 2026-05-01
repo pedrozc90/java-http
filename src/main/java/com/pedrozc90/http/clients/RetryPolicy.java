@@ -1,5 +1,7 @@
 package com.pedrozc90.http.clients;
 
+import com.pedrozc90.http.enums.HttpStatus;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,8 +31,7 @@ import java.util.Set;
 public final class RetryPolicy {
 
     /** Default status codes that warrant an automatic retry. */
-    private static final Set<Integer> DEFAULT_RETRYABLE_STATUS_CODES =
-        Collections.unmodifiableSet(new HashSet<>(Arrays.asList(429, 502, 503, 504)));
+    private static final Set<Integer> DEFAULT_RETRYABLE_STATUS_CODES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(429, 502, 503, 504)));
 
     private final int maxAttempts;
     private final long delayMs;
@@ -77,11 +78,16 @@ public final class RetryPolicy {
     /**
      * Returns {@code true} if the given HTTP status code is configured as retryable.
      *
-     * @param statusCode the HTTP status code to check
+     * @param status the HTTP status code to check
      * @return {@code true} if the code should trigger a retry
      */
-    public boolean isRetryable(final int statusCode) {
-        return retryableStatusCodes.contains(statusCode);
+    public boolean isRetryable(final int status) {
+        return retryableStatusCodes.contains(status);
+    }
+
+    public boolean isRetryable(final HttpStatus status) {
+        if (status == null) return false;
+        return retryableStatusCodes.contains(status.code());
     }
 
     /**

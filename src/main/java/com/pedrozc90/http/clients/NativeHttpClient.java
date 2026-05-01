@@ -88,12 +88,12 @@ public class NativeHttpClient implements HttpClient {
                 if (response.isSuccessful()) {
                     log.info("Request {} {} -> {} ({}) ({} ms)",
                         request.getMethod(), request.getUrl(),
-                        resolved.value(), resolved.reason(), response.getElapsed());
+                        resolved.code(), resolved.reason(), response.getElapsed());
                     return response;
                 } else {
                     log.warn("Request {} {} -> {} ({}) ({} ms)",
                         request.getMethod(), request.getUrl(),
-                        resolved.value(), resolved.reason(), response.getElapsed());
+                        resolved.code(), resolved.reason(), response.getElapsed());
                     throw new HttpResponseException(message, request, response);
                 }
             } finally {

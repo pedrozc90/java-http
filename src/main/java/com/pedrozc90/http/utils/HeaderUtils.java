@@ -7,6 +7,7 @@ import java.util.Map;
 public class HeaderUtils {
 
     private HeaderUtils() {
+        // you are not allowed to instantiate this class
     }
 
     /**

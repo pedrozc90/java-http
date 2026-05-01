@@ -63,12 +63,12 @@ public class Request<T> {
     private final RetryPolicy retryPolicy;
 
     public Request(
-        @JsonProperty(value = "url") final String url,
-        @JsonProperty(value = "method") final HttpMethod method,
-        @JsonProperty(value = "headers") final Map<String, String> headers,
-        @JsonProperty(value = "body") final T body,
-        @JsonProperty(value = "timeout") final Integer timeout,
-        @JsonProperty(value = "charset") final Charset charset,
+        final String url,
+        final HttpMethod method,
+        final Map<String, String> headers,
+        final T body,
+        final Integer timeout,
+        final Charset charset,
         final Class<T> type,
         final RetryPolicy retryPolicy
     ) {
@@ -83,12 +83,12 @@ public class Request<T> {
     }
 
     public Request(
-        @JsonProperty(value = "url") final String url,
-        @JsonProperty(value = "method") final HttpMethod method,
-        @JsonProperty(value = "headers") final Map<String, String> headers,
-        @JsonProperty(value = "body") final T body,
-        @JsonProperty(value = "timeout") final Integer timeout,
-        @JsonProperty(value = "charset") final Charset charset,
+        final String url,
+        final HttpMethod method,
+        final Map<String, String> headers,
+        final T body,
+        final Integer timeout,
+        final Charset charset,
         final Class<T> type
     ) {
         this(url, method, headers, body, timeout, charset, type, null);

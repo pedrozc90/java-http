@@ -13,13 +13,12 @@ import java.util.concurrent.Executors;
  */
 public final class HttpClientExecutor {
 
-    private static final int DEFAULT_POOL_SIZE =
-        Math.max(4, Runtime.getRuntime().availableProcessors() * 2);
+    private static final int DEFAULT_POOL_SIZE = Math.max(4, Runtime.getRuntime().availableProcessors() * 2);
 
-    private static final Executor DEFAULT_EXECUTOR =
-        Executors.newFixedThreadPool(DEFAULT_POOL_SIZE);
+    private static final Executor DEFAULT_EXECUTOR = Executors.newFixedThreadPool(DEFAULT_POOL_SIZE);
 
     private HttpClientExecutor() {
+        // you are not allowed to instantiate this class
     }
 
     /**

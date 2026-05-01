@@ -61,9 +61,7 @@ public class Response {
         this.elapsed = elapsed;
     }
 
-    // -------------------------------------------------------------------------
-    // Convenience status-check methods
-    // -------------------------------------------------------------------------
+    /* --- Status Check  --- */
 
     /**
      * Returns {@code true} if the response status is in the 2xx Successful range.
@@ -93,9 +91,7 @@ public class Response {
         return status != null && status.isError();
     }
 
-    // -------------------------------------------------------------------------
-    // Payload helpers
-    // -------------------------------------------------------------------------
+    /* --- Payload --- */
 
     /**
      * Returns the number of bytes in the payload, or {@code 0} when there is no payload.
@@ -133,10 +129,6 @@ public class Response {
     public Charset getCharset() {
         return HeaderUtils.parseCharset(HeaderUtils.findHeader(headers, HttpHeader.CONTENT_TYPE));
     }
-
-    // -------------------------------------------------------------------------
-    // Payload conversion
-    // -------------------------------------------------------------------------
 
     public <T> T as(final Class<T> type) throws IOException {
         if (payload == null || type == null) return null;
@@ -184,9 +176,7 @@ public class Response {
         return new HttpFile(tmp, filename, contentType, payload != null ? payload.length : 0);
     }
 
-    // -------------------------------------------------------------------------
-    // Factory methods
-    // -------------------------------------------------------------------------
+    /* --- Factory --- */
 
     public static Response of(final HttpStatus status, final Map<String, String> headers, final byte[] body, final long start) {
         final long elapsed = System.currentTimeMillis() - start;

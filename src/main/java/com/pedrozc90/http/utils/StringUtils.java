@@ -6,6 +6,7 @@ package com.pedrozc90.http.utils;
 public class StringUtils {
 
     private StringUtils() {
+        // you are not allowed to instantiate this class
     }
 
     /**

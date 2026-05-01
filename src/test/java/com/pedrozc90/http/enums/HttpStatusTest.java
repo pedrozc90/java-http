@@ -12,10 +12,10 @@ class HttpStatusTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void testValue() {
-        assertEquals(200, HttpStatus.OK.value());
-        assertEquals(404, HttpStatus.NOT_FOUND.value());
-        assertEquals(500, HttpStatus.INTERNAL_SERVER_ERROR.value());
+    void testCode() {
+        assertEquals(200, HttpStatus.OK.code());
+        assertEquals(404, HttpStatus.NOT_FOUND.code());
+        assertEquals(500, HttpStatus.INTERNAL_SERVER_ERROR.code());
     }
 
     @Test
