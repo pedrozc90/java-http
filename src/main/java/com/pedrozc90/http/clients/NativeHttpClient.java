@@ -1,8 +1,8 @@
 package com.pedrozc90.http.clients;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pedrozc90.http.enums.HttpStatus;
 import com.pedrozc90.http.exceptions.HttpResponseException;
+import com.pedrozc90.http.exceptions.JsonException;
 import com.pedrozc90.http.objects.Request;
 import com.pedrozc90.http.objects.Response;
 import com.pedrozc90.http.utils.JsonUtils;
@@ -107,8 +107,8 @@ public class NativeHttpClient implements HttpClient {
             try {
                 final String json = JsonUtils.toString(body);
                 return json.getBytes(request.getCharset());
-            } catch (JsonProcessingException e) {
-                throw new IOException("Failed to deserialize body", e);
+            } catch (JsonException e) {
+                throw new IOException("Failed to serialize body", e);
             }
         }
     }

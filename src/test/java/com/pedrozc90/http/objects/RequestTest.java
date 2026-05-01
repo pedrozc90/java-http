@@ -1,8 +1,8 @@
 package com.pedrozc90.http.objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pedrozc90.http.enums.HttpMethod;
+import com.pedrozc90.http.exceptions.JsonException;
 import com.pedrozc90.http.utils.JsonUtils;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
@@ -177,7 +177,7 @@ class RequestTest {
     }
 
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    public void testSerialization() throws JsonException {
         final Dto dto = new Dto("Pedro");
         final Request<Dto> request = Request.<Dto>builder()
             .url("https://example.com/api/resource")
@@ -195,7 +195,7 @@ class RequestTest {
     }
 
     @Test
-    public void testDeserialization() throws JsonProcessingException {
+    public void testDeserialization() throws JsonException {
         final String url = "https://example.com/api/resource";
         final HttpMethod method = HttpMethod.POST;
         final String json = "{\"url\":\"" + url + "\",\"method\":\"" + method + "\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":{\"name\":\"Pedro\"}}";

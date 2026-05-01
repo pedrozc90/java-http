@@ -1,7 +1,7 @@
 package com.pedrozc90.http.objects;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pedrozc90.http.enums.HttpStatus;
+import com.pedrozc90.http.exceptions.JsonException;
 import com.pedrozc90.http.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +98,7 @@ class ResponseTest {
     }
 
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    public void testSerialization() throws JsonException {
         final long start = System.currentTimeMillis();
         final Map<String, String> headers = Collections.singletonMap("header", "value");
         final String payload = "Sanity Check";
@@ -112,7 +112,7 @@ class ResponseTest {
     }
 
     @Test
-    public void testDeserialization() throws JsonProcessingException {
+    public void testDeserialization() throws JsonException {
         final String json = "{\"status\":404,\"headers\":{\"header\":\"value\"},\"payload\":\"Sanity Check\"}";
 
         final Response result = JsonUtils.toObject(json, Response.class);

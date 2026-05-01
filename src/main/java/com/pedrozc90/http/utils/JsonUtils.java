@@ -1,10 +1,10 @@
 package com.pedrozc90.http.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.pedrozc90.http.exceptions.JsonException;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -35,19 +35,31 @@ public class JsonUtils {
         _mapper = mapper;
     }
 
-    public static <T> T toObject(final JsonNode value, final Class<T> type) throws JsonProcessingException {
+    public static <T> T toObject(final JsonNode value, final Class<T> type) throws JsonException {
         if (value == null) return null;
-        return _mapper.treeToValue(value, type);
+        try {
+            return _mapper.treeToValue(value, type);
+        } catch (IOException e) {
+            throw new JsonException(e);
+        }
     }
 
-    public static <T> T toObject(final String value, final Class<T> type) throws JsonProcessingException {
+    public static <T> T toObject(final String value, final Class<T> type) throws JsonException {
         if (value == null) return null;
-        return _mapper.readValue(value, type);
+        try {
+            return _mapper.readValue(value, type);
+        } catch (IOException e) {
+            throw new JsonException(e);
+        }
     }
 
-    public static <T> T toObject(final byte[] value, final Class<T> type) throws JsonProcessingException, IOException {
+    public static <T> T toObject(final byte[] value, final Class<T> type) throws JsonException {
         if (value == null) return null;
-        return _mapper.readValue(value, type);
+        try {
+            return _mapper.readValue(value, type);
+        } catch (IOException e) {
+            throw new JsonException(e);
+        }
     }
 
     public static JsonNode toJson(final Object value) {
@@ -55,13 +67,21 @@ public class JsonUtils {
         return _mapper.valueToTree(value);
     }
 
-    public static JsonNode toJson(final String value) throws JsonProcessingException {
-        return _mapper.readTree(value);
+    public static JsonNode toJson(final String value) throws JsonException {
+        try {
+            return _mapper.readTree(value);
+        } catch (IOException e) {
+            throw new JsonException(e);
+        }
     }
 
-    public static String toString(final Object value) throws JsonProcessingException {
+    public static String toString(final Object value) throws JsonException {
         if (value == null) return null;
-        return _mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value);
+        try {
+            return _mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value);
+        } catch (IOException e) {
+            throw new JsonException(e);
+        }
     }
 
     public static String toString(final JsonNode value) {
@@ -75,9 +95,13 @@ public class JsonUtils {
         return _mapper.convertValue(node, Map.class);
     }
 
-    public static byte[] toBytes(final JsonNode node) throws JsonProcessingException {
+    public static byte[] toBytes(final JsonNode node) throws JsonException {
         if (node == null) return null;
-        return _mapper.writeValueAsBytes(node);
+        try {
+            return _mapper.writeValueAsBytes(node);
+        } catch (IOException e) {
+            throw new JsonException(e);
+        }
     }
 
 }
