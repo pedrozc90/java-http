@@ -13,6 +13,9 @@ import java.util.Map;
 
 public class FileUtils {
 
+    private FileUtils() {
+    }
+
     private static final String _dir = System.getProperty("java.io.tmpdir");
     private static final Map<String, String> _map;
 

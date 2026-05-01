@@ -96,6 +96,78 @@ class RequestTest {
     }
 
     @Test
+    public void testQueryParamsAppendedToUrl() {
+        final Request<?> request = Request.builder()
+            .url("https://example.com/api/resource")
+            .query("page", "1")
+            .query("size", "10")
+            .get()
+            .build();
+
+        final String url = request.getUrl();
+        assertTrue(url.startsWith("https://example.com/api/resource?"));
+        assertTrue(url.contains("page=1"));
+        assertTrue(url.contains("size=10"));
+        assertTrue(url.contains("&"));
+    }
+
+    @Test
+    public void testQueryParamsEncoded() {
+        final Request<?> request = Request.builder()
+            .url("https://example.com/search")
+            .query("q", "hello world")
+            .get()
+            .build();
+
+        assertTrue(request.getUrl().contains("q=hello+world"));
+    }
+
+    @Test
+    public void testAcceptHeaderShortcut() {
+        final Request<?> request = Request.builder()
+            .url("https://example.com")
+            .accept("application/json")
+            .get()
+            .build();
+
+        assertEquals("application/json", request.getHeaders().get("Accept"));
+    }
+
+    @Test
+    public void testAcceptContentTypeShortcut() {
+        final Request<?> request = Request.builder()
+            .url("https://example.com")
+            .accept(com.pedrozc90.http.enums.ContentType.APPLICATION_JSON)
+            .get()
+            .build();
+
+        assertEquals("application/json", request.getHeaders().get("Accept"));
+    }
+
+    @Test
+    public void testBuildWithNullUrlThrowsException() {
+        assertThrows(IllegalStateException.class, () ->
+            Request.builder().get().build()
+        );
+    }
+
+    @Test
+    public void testBuildWithBlankUrlThrowsException() {
+        assertThrows(IllegalStateException.class, () ->
+            Request.builder().url("   ").get().build()
+        );
+    }
+
+    @Test
+    public void testBuildWithNullMethodThrowsException() {
+        assertThrows(IllegalStateException.class, () -> {
+            final RequestBuilder.Builder<?> builder = new RequestBuilder.Builder<>();
+            builder.url("https://example.com");
+            builder.build();
+        });
+    }
+
+    @Test
     public void testToString() {
         final Request<?> request = Request.builder().url("https://example.com").get().build();
 

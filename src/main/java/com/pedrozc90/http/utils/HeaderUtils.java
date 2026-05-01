@@ -6,6 +6,9 @@ import java.util.Map;
 
 public class HeaderUtils {
 
+    private HeaderUtils() {
+    }
+
     /**
      * Case-insensitive header lookup. Returns the first matching value, or {@code null}.
      */

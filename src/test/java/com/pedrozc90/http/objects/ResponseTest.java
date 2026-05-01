@@ -208,6 +208,21 @@ class ResponseTest {
         assertEquals("héllo", response.asString());
     }
 
+    @Test
+    void testIsFile_inlineDispositionNotFile() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Disposition", "inline; filename=\"file.pdf\""), null, 0);
+        assertFalse(response.isFile());
+    }
+
+    @Test
+    void testAsFile_nullPayloadThrowsIOException() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Disposition", "attachment; filename=\"file.txt\""),
+            null, 0);
+        assertThrows(java.io.IOException.class, response::asFile);
+    }
+
     /* --- Helpers --- */
     private static Response buildResponse(final HttpStatus status) {
         return new Response(status, Collections.emptyMap(), null, 0);

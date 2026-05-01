@@ -3,9 +3,13 @@ package com.pedrozc90.http.objects;
 import com.pedrozc90.http.enums.ContentType;
 import com.pedrozc90.http.enums.HttpHeader;
 import com.pedrozc90.http.enums.HttpMethod;
+import com.pedrozc90.http.utils.StringUtils;
 import lombok.Data;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -45,6 +49,10 @@ public class RequestBuilder {
         HeaderStep<T> contentType(final String value);
 
         HeaderStep<T> contentType(final ContentType value);
+
+        HeaderStep<T> accept(final String value);
+
+        HeaderStep<T> accept(final ContentType value);
 
         HeaderStep<T> timeout(final Integer value);
     }
@@ -137,7 +145,17 @@ public class RequestBuilder {
 
         @Override
         public HeaderStep<T> contentType(final ContentType value) {
-            return contentType(value.getValue());
+            return contentType(value.value());
+        }
+
+        @Override
+        public HeaderStep<T> accept(final String value) {
+            return header(HttpHeader.ACCEPT, value);
+        }
+
+        @Override
+        public HeaderStep<T> accept(final ContentType value) {
+            return accept(value.value());
         }
 
         @Override
@@ -209,9 +227,31 @@ public class RequestBuilder {
         @Override
         @SuppressWarnings("unchecked")
         public Request<T> build(final Charset charset) {
-            if (url == null) throw new IllegalStateException("URL must be defined");
+            if (StringUtils.isBlank(url)) throw new IllegalStateException("URL must be defined");
             if (method == null) throw new IllegalStateException("HTTP method must be defined");
-            return new Request<>(url, method, headers, body, timeout, charset, (Class<T>) bodyType);
+
+            final String resolvedUrl;
+            if (!query.isEmpty()) {
+                final StringBuilder sb = new StringBuilder(url);
+                sb.append('?');
+                boolean first = true;
+                try {
+                    for (final Map.Entry<String, String> entry : query.entrySet()) {
+                        if (!first) sb.append('&');
+                        sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name()));
+                        sb.append('=');
+                        sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.name()));
+                        first = false;
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    throw new IllegalStateException("UTF-8 encoding not supported", e);
+                }
+                resolvedUrl = sb.toString();
+            } else {
+                resolvedUrl = url;
+            }
+
+            return new Request<>(resolvedUrl, method, headers, body, timeout, charset, (Class<T>) bodyType);
         }
 
         @Override

@@ -113,11 +113,12 @@ public class Response {
     }
 
     /**
-     * Returns {@code true} when the response carries a file attachment, indicated by the
-     * presence of a {@code Content-Disposition} header.
+     * Returns {@code true} when the response carries a file attachment, indicated by a
+     * {@code Content-Disposition: attachment} header.
      */
     public boolean isFile() {
-        return StringUtils.isNotBlank(HeaderUtils.findHeader(headers, HttpHeader.CONTENT_DISPOSITION));
+        final String contentDisposition = HeaderUtils.findHeader(headers, HttpHeader.CONTENT_DISPOSITION);
+        return contentDisposition != null && contentDisposition.toLowerCase(java.util.Locale.ROOT).startsWith("attachment");
     }
 
     /**
@@ -159,6 +160,10 @@ public class Response {
      * created via {@link Files#createTempFile}.
      */
     public HttpFile asFile() throws IOException {
+        if (payload == null || payload.length == 0) {
+            throw new IOException("Response has no payload to save as file");
+        }
+
         final String contentDisposition = HeaderUtils.findHeader(headers, HttpHeader.CONTENT_DISPOSITION);
         final String contentType = HeaderUtils.findHeader(headers, HttpHeader.CONTENT_TYPE);
 

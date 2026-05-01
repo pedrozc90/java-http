@@ -120,6 +120,7 @@ public class NativeHttpClient implements HttpClient {
         if (headers == null || headers.isEmpty()) return out;
 
         headers.forEach((key, value) -> {
+            if (key == null) return; // skip the status-line pseudo-header
             out.put(key, String.join("; ", value));
         });
 
