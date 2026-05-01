@@ -155,6 +155,9 @@ public class NativeHttpClientTest {
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatus());
         assertNotNull(response.getPayload());
+
+        // the exception message is always set (either from the HTTP status line or auto-generated)
+        assertNotNull(cause.getMessage());
     }
 
     @Data

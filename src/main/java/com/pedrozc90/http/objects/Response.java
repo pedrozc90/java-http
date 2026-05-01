@@ -106,10 +106,15 @@ public class Response {
 
     /**
      * Returns {@code true} when the {@code Content-Type} header indicates JSON content.
+     *
+     * <p>Matches standard {@code application/json} as well as structured-syntax types
+     * such as {@code application/problem+json} and {@code application/vnd.api+json}.
      */
     public boolean isJson() {
         final String contentType = HeaderUtils.findHeader(headers, HttpHeader.CONTENT_TYPE);
-        return contentType != null && contentType.contains("application/json");
+        if (contentType == null) return false;
+        final String baseType = contentType.split(";")[0].trim().toLowerCase(java.util.Locale.ROOT);
+        return baseType.equals("application/json") || baseType.matches("application/.+\\+json");
     }
 
     /**

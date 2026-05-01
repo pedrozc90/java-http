@@ -24,9 +24,8 @@ public interface HttpClient {
      */
     Response execute(final Request<?> request) throws HttpResponseException;
 
-
     /**
-     * Executes the given HTTP request asynchronously.
+     * Executes the given HTTP request asynchronously using the provided executor.
      *
      * <p>Any exception during execution is wrapped in a {@link java.util.concurrent.CompletionException}.
      *
@@ -35,4 +34,15 @@ public interface HttpClient {
      * @return a future that completes with the HTTP response
      */
     CompletableFuture<Response> async(final Request<?> request, final Executor executor);
+
+    /**
+     * Executes the given HTTP request asynchronously using the
+     * {@link HttpClientExecutor#defaultExecutor() shared default executor}.
+     *
+     * @param request the request to execute; must not be {@code null}
+     * @return a future that completes with the HTTP response
+     */
+    default CompletableFuture<Response> async(final Request<?> request) {
+        return async(request, HttpClientExecutor.defaultExecutor());
+    }
 }

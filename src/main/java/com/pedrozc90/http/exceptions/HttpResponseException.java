@@ -22,7 +22,7 @@ public class HttpResponseException extends Exception {
     }
 
     public HttpResponseException(final Throwable cause, final Request<?> request, final Response response) {
-        this(cause, null, request, response);
+        this(cause, buildDefaultMessage(request, response), request, response);
     }
 
     public HttpResponseException(final String message, final Request<?> request, final Response response) {
@@ -31,6 +31,22 @@ public class HttpResponseException extends Exception {
 
     public CompletionException toCompletionException() {
         return new CompletionException(this);
+    }
+
+    private static String buildDefaultMessage(final Request<?> request, final Response response) {
+        final StringBuilder sb = new StringBuilder("HTTP");
+        if (response != null && response.getStatus() != null) {
+            sb.append(" ").append(response.getStatus());
+        }
+        if (request != null) {
+            if (request.getMethod() != null) {
+                sb.append(": ").append(request.getMethod());
+            }
+            if (request.getUrl() != null) {
+                sb.append(" ").append(request.getUrl());
+            }
+        }
+        return sb.toString();
     }
 
 }

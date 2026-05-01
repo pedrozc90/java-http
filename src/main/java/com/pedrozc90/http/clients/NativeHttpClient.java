@@ -18,8 +18,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.logging.Logger;
 
 public class NativeHttpClient implements HttpClient {
+
+    private static final Logger log = Logger.getLogger(NativeHttpClient.class.getName());
+
+    private final Executor executor;
+
+    public NativeHttpClient() {
+        this(HttpClientExecutor.defaultExecutor());
+    }
+
+    public NativeHttpClient(final Executor executor) {
+        this.executor = executor;
+    }
 
     @Override
     public Response execute(final Request<?> request) throws HttpResponseException {
@@ -44,7 +57,9 @@ public class NativeHttpClient implements HttpClient {
             connection.setReadTimeout(timeout);
 
             // set the request headers.
-            request.getHeaders().forEach((key, value) -> connection.setRequestProperty(key, value));
+            if (request.getHeaders() != null) {
+                request.getHeaders().forEach((key, value) -> connection.setRequestProperty(key, value));
+            }
 
             // send the request body.
             final byte[] bytes = getBodyBytes(request);
@@ -68,6 +83,8 @@ public class NativeHttpClient implements HttpClient {
                 }
 
                 final Response response = Response.of(status, headers, content, start);
+                log.info(String.format("Request %s %s -> %d (%d ms)",
+                    request.getMethod(), request.getUrl(), status, response.getElapsed()));
                 if (!response.isSuccessful()) {
                     throw new HttpResponseException(message, request, response);
                 }
@@ -81,15 +98,20 @@ public class NativeHttpClient implements HttpClient {
         }
     }
 
+    @Override
     public CompletableFuture<Response> async(final Request<?> request, final Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return execute(request);
             } catch (HttpResponseException e) {
-                // TODO: how do we properly handle this?
                 throw e.toCompletionException();
             }
         }, executor);
+    }
+
+    @Override
+    public CompletableFuture<Response> async(final Request<?> request) {
+        return async(request, this.executor);
     }
 
     /* --- Helpers --- */

@@ -147,6 +147,20 @@ class ResponseTest {
     }
 
     @Test
+    void testIsJson_problemJson() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/problem+json"), null, 0);
+        assertTrue(response.isJson());
+    }
+
+    @Test
+    void testIsJson_vndApiJson() {
+        final Response response = new Response(HttpStatus.OK,
+            Collections.singletonMap("Content-Type", "application/vnd.api+json"), null, 0);
+        assertTrue(response.isJson());
+    }
+
+    @Test
     void testIsFile_true() {
         final Response response = new Response(HttpStatus.OK,
             Collections.singletonMap("Content-Disposition", "attachment; filename=\"file.pdf\""), null, 0);
