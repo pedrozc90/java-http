@@ -52,19 +52,14 @@ public interface HttpClient {
             return executeOnce(request);
         }
 
+        // executeOnce throws HttpResponseException for every non-2xx status, so all
+        // retry decisions are made in the catch block; the try block only needs to
+        // return on success.
         HttpResponseException lastException = null;
 
         for (int attempt = 1; attempt <= policy.getMaxAttempts(); attempt++) {
             try {
-                final Response response = executeOnce(request);
-
-                if (policy.isRetryable(response.getStatus()) && attempt < policy.getMaxAttempts()) {
-                    log.warn("Retrying request {} {} after retryable status {} (attempt {}/{})", request.getMethod(), request.getUrl(), response.getStatus(), attempt, policy.getMaxAttempts());
-                    RetryPolicy.sleep(policy.getDelayMs());
-                    continue;
-                }
-
-                return response;
+                return executeOnce(request);
             } catch (HttpResponseException e) {
                 lastException = e;
 
@@ -82,8 +77,10 @@ public interface HttpClient {
             }
         }
 
-        // TODO: should we throw the last exception or the last response?
-        throw lastException;
+        // Unreachable when maxAttempts >= 1 (enforced by RetryPolicy.Builder): the
+        // last iteration always hits the else-throw above.  Guard defensively so the
+        // compiler is satisfied and a broken policy can't produce a NullPointerException.
+        throw lastException != null ? lastException : new HttpResponseException("Retry loop exhausted without result", request, null);
     }
 
     /**
