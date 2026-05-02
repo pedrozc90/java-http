@@ -1,0 +1,40 @@
+name: Publish to GitHub Packages
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Set release version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mvn --no-transfer-progress versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+
+      - name: Build and run tests
+        run: mvn --no-transfer-progress verify
+
+      - name: Publish package
+        run: mvn --no-transfer-progress deploy -DskipTests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
