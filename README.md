@@ -1,8 +1,8 @@
-# java-http
+# Java Http
 
 ## Description
 
-A simple java http client abstraction
+A simple java http client abstraction to wrapper other clients
 
 ## Usage
 
